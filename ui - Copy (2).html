@@ -1,0 +1,3388 @@
+<!-- FILE: ui_v2.html | version: 2025-01-21.v2 (Complete - All features) -->
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Domino AI — Pro Mode</title>
+
+  <style>
+    /* ========================================
+       ROOT VARIABLES
+    ======================================== */
+    :root {
+      --bg: #0a1525;
+      --panel: #111f35;
+      --panel2: #162744;
+      --panel3: #1a3050;
+      --border: rgba(255,255,255,0.10);
+      --text: #e8f1ff;
+      --muted: #93a7d3;
+      --accent: #3d8bff;
+      --ok: #00c9a7;
+      --warn: #ffb347;
+      --bad: #ff6b8b;
+
+      --r: 8px;
+      --gap: 8px;
+
+      --tileW: 56px;
+      --tileH: 34px;
+      --pip: 4px;
+      --step: 62px;
+    }
+
+    /* ========================================
+       RESET & BASE
+    ======================================== */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 12px;
+      line-height: 1.35;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* ========================================
+       MAIN APP LAYOUT
+    ======================================== */
+    .app {
+      height: 100vh;
+      display: grid;
+      grid-template-rows: auto auto 1fr auto;
+      overflow: hidden;
+    }
+
+    /* ========================================
+       TABS BAR
+    ======================================== */
+    .tabsBar {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      background: var(--panel2);
+      border-bottom: 1px solid var(--border);
+      overflow: hidden;
+    }
+
+    .tabsList {
+      display: flex;
+      gap: 4px;
+      flex: 1;
+      overflow-x: auto;
+      scrollbar-width: thin;
+      scrollbar-color: var(--accent) transparent;
+    }
+
+    .tabsList::-webkit-scrollbar { height: 4px; }
+    .tabsList::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 2px; }
+
+    .game-tab {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 12px;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 6px 6px 0 0;
+      cursor: pointer;
+      font-size: 11px;
+      white-space: nowrap;
+      transition: all 0.15s;
+      user-select: none;
+    }
+
+    .game-tab:hover { border-color: var(--accent); }
+
+    .game-tab.active {
+      background: var(--bg);
+      border-bottom-color: var(--bg);
+      color: var(--accent);
+      font-weight: 700;
+    }
+
+    .game-tab .tab-indicator {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--muted);
+    }
+
+    .game-tab .tab-indicator.my-turn {
+      background: var(--ok);
+      box-shadow: 0 0 6px var(--ok);
+    }
+
+    .game-tab .tab-indicator.opp-turn { background: var(--bad); }
+
+    .game-tab .tab-score {
+      font-weight: 700;
+      font-size: 10px;
+      color: var(--muted);
+    }
+
+    .game-tab .tab-close {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 12px;
+      line-height: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .game-tab .tab-close:hover { background: var(--bad); color: white; }
+
+    .tab-add {
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      border: 1px dashed var(--border);
+      background: transparent;
+      color: var(--muted);
+      font-size: 16px;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .tab-add:hover { border-color: var(--accent); color: var(--accent); }
+
+    .tabsActions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-right: 10px;
+    }
+
+    /* ========================================
+       TURN INDICATOR BAR
+    ======================================== */
+    .turnBar {
+      padding: 10px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+      font-size: 13px;
+      font-weight: 700;
+      transition: all 0.3s ease;
+      flex-wrap: wrap;
+    }
+
+    .turnBar.my-turn {
+      background: linear-gradient(135deg, #00c9a7 0%, #00a388 100%);
+      color: #fff;
+    }
+
+    .turnBar.opp-turn {
+      background: linear-gradient(135deg, #ff6b8b 0%, #c44569 100%);
+      color: #fff;
+    }
+
+    .turnBar.round-over {
+      background: linear-gradient(135deg, #ffb347 0%, #ff8c00 100%);
+      color: #fff;
+    }
+
+    .turnBar.no-session {
+      background: var(--panel2);
+      color: var(--muted);
+    }
+
+    .turnBar .turn-text { font-size: 15px; font-weight: 900; }
+
+    .turnBar .turn-info {
+      display: flex;
+      gap: 15px;
+      font-size: 12px;
+      opacity: 0.95;
+    }
+
+    .turnBar .turn-info span {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    /* ========================================
+       MAIN CONTENT AREA
+    ======================================== */
+    .mainContent {
+      display: grid;
+      grid-template-columns: 1fr 280px;
+      gap: var(--gap);
+      padding: var(--gap);
+      overflow: hidden;
+      min-height: 0;
+    }
+
+    /* ========================================
+       BOARD AREA
+    ======================================== */
+    .boardArea {
+      display: flex;
+      flex-direction: column;
+      background: linear-gradient(135deg, #0d2b1a, #153a25);
+      border: 1px solid rgba(0,0,0,0.4);
+      border-radius: var(--r);
+      overflow: hidden;
+      min-height: 0;
+    }
+
+    .boardHead {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 10px;
+      background: rgba(0,0,0,0.25);
+      border-bottom: 1px solid rgba(0,0,0,0.25);
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .boardViewport {
+      flex: 1;
+      overflow: auto;
+      padding: 12px;
+      direction: ltr;
+      position: relative;
+      min-height: 0;
+    }
+
+    .boardWorld {
+      position: relative;
+      min-width: 600px;
+      min-height: 350px;
+      margin: 0 auto;
+      transform-origin: 50% 50%;
+    }
+
+    .endsBar {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      flex-wrap: wrap;
+      padding: 8px 10px;
+      background: var(--panel2);
+      border-top: 1px solid var(--border);
+    }
+
+    .endBtn {
+      padding: 8px 14px;
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(0,0,0,0.22);
+      color: var(--text);
+      cursor: pointer;
+      font-weight: 800;
+      font-size: 12px;
+      min-width: 55px;
+      transition: all 0.15s;
+    }
+
+    .endBtn:hover:not(:disabled) {
+      border-color: var(--accent);
+      background: rgba(61,139,255,0.15);
+    }
+
+    .endBtn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .endBtn.on { border-color: var(--accent); background: rgba(61,139,255,0.25); }
+
+    /* ========================================
+       SIDEBAR
+    ======================================== */
+    .sidebar {
+      display: flex;
+      flex-direction: column;
+      gap: var(--gap);
+      overflow-y: auto;
+      overflow-x: hidden;
+      min-height: 0;
+    }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      padding: 10px;
+      flex-shrink: 0;
+    }
+
+    .card.compact { padding: 8px; }
+
+    .sectionTitle {
+      font-size: 10px;
+      font-weight: 800;
+      color: var(--muted);
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    /* ========================================
+       MY HAND
+    ======================================== */
+    .handGrid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      justify-content: center;
+    }
+
+    .tileBtn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 46px;
+      padding: 6px 7px;
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(0,0,0,0.22);
+      color: var(--text);
+      font-weight: 800;
+      font-size: 11px;
+      cursor: pointer;
+      user-select: none;
+      transition: all 0.1s;
+    }
+
+    .tileBtn:hover { border-color: var(--accent); }
+    .tileBtn.sel { outline: 2px solid var(--accent); background: rgba(61,139,255,0.15); }
+    .tileBtn.mine { background: rgba(0,201,167,0.12); border-color: rgba(0,201,167,0.35); }
+    .tileBtn.played { opacity: 0.35; text-decoration: line-through; cursor: not-allowed; }
+    .tileBtn.hidden { background: rgba(0,0,0,0.18); }
+
+    .tileBtn.likely {
+      border-color: rgba(255,179,71,0.65);
+      background: rgba(255,179,71,0.12);
+    }
+
+    .tileBtn.likely:hover { background: rgba(255,179,71,0.25); }
+
+    .tileBtn.forced {
+      border-color: var(--warn);
+      box-shadow: 0 0 8px rgba(255,179,71,0.4);
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { box-shadow: 0 0 8px rgba(255,179,71,0.4); }
+      50% { box-shadow: 0 0 16px rgba(255,179,71,0.7); }
+    }
+
+    /* ========================================
+       QUICK ACTIONS
+    ======================================== */
+    .quickActions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+    }
+
+    .quickActions .btn { padding: 10px 8px; font-size: 11px; }
+
+    /* ========================================
+       OPPONENT DRAWER
+    ======================================== */
+    .oppDrawer {
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      overflow: hidden;
+    }
+
+    .oppDrawerHeader {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 10px;
+      background: var(--panel2);
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .oppDrawerHeader:hover { background: var(--panel3); }
+
+    .oppDrawerContent {
+      padding: 10px;
+      background: var(--panel);
+      display: none;
+    }
+
+    .oppDrawer.open .oppDrawerContent { display: block; }
+
+    .oppDrawerContent .row {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-bottom: 8px;
+    }
+
+    .oppDrawerContent .row:last-child { margin-bottom: 0; }
+
+    /* ========================================
+       BEST MOVE CARD
+    ======================================== */
+    .bestMoveCard {
+      background: linear-gradient(135deg, rgba(0,201,167,0.15), rgba(0,201,167,0.05));
+      border: 1px solid rgba(0,201,167,0.3);
+      border-radius: var(--r);
+      padding: 10px;
+      text-align: center;
+      display: none;
+    }
+
+    .bestMoveCard.show { display: block; }
+    .bestMoveCard .best-label { font-size: 9px; color: var(--ok); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+    .bestMoveCard .best-move { font-size: 16px; font-weight: 900; color: var(--text); }
+    .bestMoveCard .best-score { font-size: 11px; color: var(--muted); margin-top: 2px; }
+    .bestMoveCard .best-apply { margin-top: 8px; }
+
+    /* ========================================
+       BOTTOM PANELS (Collapsible)
+    ======================================== */
+    .bottomPanels {
+      border-top: 1px solid var(--border);
+      background: var(--panel2);
+    }
+
+    .panelsToggles {
+      display: flex;
+      gap: 4px;
+      padding: 6px 10px;
+      overflow-x: auto;
+    }
+
+    .panelToggle {
+      padding: 6px 12px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: var(--panel);
+      color: var(--text);
+      font-size: 11px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.15s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .panelToggle:hover { border-color: var(--accent); }
+
+    .panelToggle.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: white;
+    }
+
+    .panelToggle .toggle-arrow { transition: transform 0.2s; font-size: 10px; }
+    .panelToggle.active .toggle-arrow { transform: rotate(90deg); }
+
+    .panelContent {
+      display: none;
+      padding: 10px;
+      background: var(--panel);
+      border-top: 1px solid var(--border);
+      max-height: 280px;
+      overflow-y: auto;
+    }
+
+    .panelContent.show { display: block; }
+
+    /* ========================================
+       SUGGESTIONS LIST
+    ======================================== */
+    .sugList { display: flex; flex-direction: column; gap: 6px; }
+
+    .sugItem {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 10px;
+      background: rgba(0,0,0,0.15);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      gap: 10px;
+    }
+
+    .sugItem:hover { border-color: var(--accent); }
+    .sugItem .sug-main { font-weight: 700; }
+    .sugItem .sug-detail { font-size: 10px; color: var(--muted); }
+
+    /* ========================================
+       ATLAS GRID
+    ======================================== */
+    .atlasGrid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 4px;
+    }
+
+    /* ========================================
+       EVENTS LIST
+    ======================================== */
+    .eventsList { max-height: 200px; overflow-y: auto; }
+
+    .eventItem {
+      padding: 6px 8px;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      font-size: 11px;
+    }
+
+    .eventItem:last-child { border-bottom: none; }
+    .eventItem .ev-main { font-weight: 600; }
+    .eventItem .ev-detail { color: var(--muted); font-size: 10px; }
+
+    /* ========================================
+       BUTTONS
+    ======================================== */
+    .btn {
+      background: linear-gradient(to bottom, #1e3a6a, #152a55);
+      border: 1px solid rgba(255,255,255,0.12);
+      color: var(--text);
+      padding: 7px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 11px;
+      font-weight: 700;
+      white-space: nowrap;
+      user-select: none;
+      transition: all 0.15s;
+      text-decoration: none;
+    }
+
+    .btn:hover:not(:disabled) { border-color: var(--accent); }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn.primary { background: linear-gradient(to bottom, #2d5bb5, #1d4a94); }
+    .btn.ok { background: linear-gradient(to bottom, #00a388, #008570); }
+    .btn.warn { background: linear-gradient(to bottom, #b85e00, #9a4e00); }
+    .btn.bad { background: linear-gradient(to bottom, #c44569, #a23559); }
+    .btn.small { padding: 5px 8px; font-size: 10px; }
+    .btn.icon-only { padding: 6px 8px; font-size: 14px; }
+
+    /* ========================================
+       INPUTS & SELECTS
+    ======================================== */
+    .input, .select {
+      background: rgba(0,0,0,0.25);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 6px 8px;
+      color: var(--text);
+      font-size: 11px;
+      outline: none;
+    }
+
+    .input:focus, .select:focus { border-color: var(--accent); }
+    .select.small { padding: 4px 6px; font-size: 10px; }
+
+    /* ========================================
+       CHIPS
+    ======================================== */
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 8px;
+      background: rgba(0,0,0,0.25);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      font-size: 10px;
+      color: var(--text);
+      white-space: nowrap;
+    }
+
+    /* ========================================
+       ROW HELPERS
+    ======================================== */
+    .row { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+    .row.between { justify-content: space-between; }
+    .mut { color: var(--muted); font-size: 10px; }
+
+    /* ========================================
+       DOMINO TILES (On Board)
+    ======================================== */
+    .domino {
+      width: var(--tileW);
+      height: var(--tileH);
+      background: linear-gradient(145deg, #f8f3e9, #e8e0d1);
+      border-radius: 6px;
+      border: 1px solid rgba(0,0,0,0.22);
+      box-shadow: 0 3px 10px rgba(0,0,0,0.25);
+      position: absolute;
+      transform: translate(-50%, -50%);
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      user-select: none;
+      pointer-events: none;
+    }
+
+    .domino.vert {
+      width: var(--tileH);
+      height: var(--tileW);
+      grid-template-columns: 1fr;
+      grid-template-rows: 1fr 1fr;
+    }
+
+    .domino.ghost {
+      opacity: 0.65;
+      border: 2px dashed var(--accent);
+      pointer-events: auto;
+      cursor: pointer;
+    }
+
+    .domino.last-played { box-shadow: 0 0 20px rgba(0,201,167,0.6); }
+
+    .half {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      grid-template-rows: repeat(3, 1fr);
+      padding: 3px;
+    }
+
+    .pip {
+      width: var(--pip);
+      height: var(--pip);
+      background: #111;
+      border-radius: 50%;
+      place-self: center;
+    }
+
+    /* ========================================
+       MODALS
+    ======================================== */
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.75);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      z-index: 2000;
+    }
+
+    .overlay.show { display: flex; }
+
+    .modal {
+      width: min(800px, 95%);
+      max-height: 85vh;
+      overflow: auto;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      padding: 16px;
+    }
+
+    .modalHead {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .modalHead h2 { font-size: 14px; font-weight: 800; }
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .help { color: var(--muted); font-size: 10px; margin-top: 6px; }
+
+    /* ========================================
+       TOAST
+    ======================================== */
+    .toast {
+      position: fixed;
+      left: 16px;
+      right: 16px;
+      bottom: 16px;
+      max-width: 450px;
+      margin: 0 auto;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      padding: 10px 14px;
+      box-shadow: 0 6px 24px rgba(0,0,0,0.4);
+      display: none;
+      z-index: 3000;
+      font-size: 12px;
+    }
+
+    .toast.show { display: block; animation: slideUp 0.2s ease; }
+
+    @keyframes slideUp {
+      from { transform: translateY(20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    .toast.bad { border-color: rgba(255,107,139,0.6); background: rgba(255,107,139,0.12); }
+    .toast.ok { border-color: rgba(0,201,167,0.55); background: rgba(0,201,167,0.10); }
+
+    /* ========================================
+       RESPONSIVE
+    ======================================== */
+    @media (max-width: 900px) {
+      .mainContent { grid-template-columns: 1fr; }
+      .sidebar { flex-direction: row; flex-wrap: wrap; overflow-x: auto; }
+      .sidebar .card { flex: 1; min-width: 200px; }
+    }
+
+    /* ========================================
+       SCROLLBAR STYLING
+    ======================================== */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--panel3); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+  </style>
+</head>
+
+<body>
+<div class="app">
+
+  <!-- ==========================================
+       TABS BAR
+  ========================================== -->
+  <div class="tabsBar">
+    <div class="tabsList" id="tabsList"></div>
+    <button class="tab-add" id="btnAddTab" title="مباراة جديدة (Ctrl+T)">+</button>
+    
+    <div class="tabsActions">
+      <button class="btn small icon-only" id="btnQuickSave" title="حفظ سريع (Ctrl+S)">💾</button>
+      <select id="quickLoadSelect" class="select small" title="تحميل سريع">
+        <option value="">📂 تحميل...</option>
+      </select>
+      <button class="btn small" id="btnRefresh" title="تحديث">🔄</button>
+    </div>
+  </div>
+
+  <!-- ==========================================
+       TURN INDICATOR
+  ========================================== -->
+  <div class="turnBar no-session" id="turnBar">
+    <span class="turn-text" id="turnText">ابدأ مباراة جديدة</span>
+    <div class="turn-info" id="turnInfo" style="display:none">
+      <span>أنا: <strong id="dispMyScore">0</strong></span>
+      <span>الخصم: <strong id="dispOppScore">0</strong></span>
+      <span>R<strong id="dispRound">1</strong></span>
+      <span>🦴 <strong id="dispBone">14</strong></span>
+      <span>👤 <strong id="dispOppTiles">7</strong></span>
+    </div>
+  </div>
+
+  <!-- ==========================================
+       MAIN CONTENT
+  ========================================== -->
+  <div class="mainContent">
+    
+    <!-- BOARD AREA -->
+    <div class="boardArea">
+      <div class="boardHead">
+        <div class="row">
+          <span class="chip">المركز: <strong id="centerTile">-</strong></span>
+          <span class="chip">المجموع: <strong id="endsSum">0</strong></span>
+          <span class="chip">النقاط: <strong id="scoreNow">0</strong></span>
+        </div>
+        <div class="row">
+          <label class="chip" style="gap:6px">
+            🔍
+            <input id="zoom" type="range" min="50" max="120" value="85" style="width:70px" />
+            <span id="zoomVal">85%</span>
+          </label>
+          <button class="btn small" id="btnFitBoard">⊡</button>
+        </div>
+      </div>
+
+      <div class="boardViewport" id="viewport">
+        <div class="boardWorld" id="world"></div>
+      </div>
+
+      <div class="endsBar">
+        <span class="chip" id="selInfo">اختر قطعة من يدك</span>
+        <div class="row" style="gap:4px">
+          <button class="endBtn" id="endR" data-end="right" disabled>→ R</button>
+          <button class="endBtn" id="endL" data-end="left" disabled>← L</button>
+          <button class="endBtn" id="endU" data-end="up" disabled>↑ U</button>
+          <button class="endBtn" id="endD" data-end="down" disabled>↓ D</button>
+        </div>
+        <button class="btn small" id="btnClearSel">✕</button>
+        <span class="mut">1-7 قطع | R/L/U/D طرف | Enter تنفيذ</span>
+      </div>
+    </div>
+
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+      
+      <!-- BEST MOVE -->
+      <div class="bestMoveCard" id="bestMoveCard">
+        <div class="best-label">⭐ أفضل نقلة</div>
+        <div class="best-move" id="bestMoveText">-</div>
+        <div class="best-score" id="bestMoveScore">-</div>
+        <button class="btn ok small best-apply" id="btnApplyBest">تنفيذ</button>
+      </div>
+
+      <!-- MY HAND -->
+      <div class="card">
+        <div class="sectionTitle">
+          <span>🃏 يدي</span>
+          <span class="chip" id="handCount">0 قطع</span>
+        </div>
+        <div class="handGrid" id="myHand"></div>
+      </div>
+
+      <!-- QUICK ACTIONS -->
+      <div class="card compact">
+        <div class="sectionTitle">⚡ إجراءات</div>
+        <div class="quickActions">
+          <button class="btn ok" id="btnAnalyze" disabled>🔍 تحليل (A)</button>
+          <button class="btn primary" id="btnPlayBest" disabled>▶ أفضل (P)</button>
+          <button class="btn" id="btnUndo" disabled>↩ تراجع (Z)</button>
+          <button class="btn" id="btnRedo" disabled>↪ إعادة (Y)</button>
+        </div>
+        <div class="row" style="margin-top:8px">
+          <button class="btn warn" id="btnDrawMe" disabled>سحب لي</button>
+          <button class="btn" id="btnPassMe" disabled>أمرر</button>
+        </div>
+      </div>
+
+      <!-- OPPONENT DRAWER -->
+      <div class="oppDrawer" id="oppDrawer">
+        <div class="oppDrawerHeader" id="oppDrawerToggle">
+          <span>👤 إجراءات الخصم</span>
+          <span class="toggle-arrow">▸</span>
+        </div>
+        <div class="oppDrawerContent">
+          <div class="row">
+            <button class="btn warn" id="btnOppPlay">الخصم يلعب...</button>
+            <select id="oppCert" class="select small">
+              <option value="certain">مؤكد</option>
+              <option value="probable" selected>محتمل</option>
+              <option value="possible">ممكن</option>
+            </select>
+          </div>
+          <div class="row">
+            <button class="btn" id="btnOppDraw1" data-draw="1">x1</button>
+            <button class="btn" id="btnOppDraw2" data-draw="2">x2</button>
+            <button class="btn" id="btnOppDraw3" data-draw="3">x3</button>
+            <button class="btn" id="btnOppDraw5" data-draw="5">x5</button>
+            <button class="btn" id="btnOppPass">يمرر</button>
+          </div>
+          <div class="row">
+            <button class="btn warn" id="btnOppOpen">الخصم يفتح</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ANALYSIS SETTINGS -->
+      <div class="card compact">
+        <div class="sectionTitle">⚙️ تحليل</div>
+        <div class="row">
+          <select id="analysisLevel" class="select">
+            <option value="rust" selected>Rust</option>
+            <option value="quick">سريع</option>
+            <option value="standard">قياسي</option>
+            <option value="deep">عميق</option>
+            <option value="ismcts">ISMCTS</option>
+          </select>
+          <input id="det" class="input" type="number" value="20" style="width:50px" title="det"/>
+          <input id="thinkMs" class="input" type="number" value="2000" style="width:60px" title="ms"/>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ==========================================
+       BOTTOM PANELS
+  ========================================== -->
+  <div class="bottomPanels">
+    <div class="panelsToggles">
+      <button class="panelToggle" data-panel="suggestions"><span class="toggle-arrow">▸</span> الاقتراحات</button>
+      <button class="panelToggle" data-panel="atlas"><span class="toggle-arrow">▸</span> Atlas</button>
+      <button class="panelToggle" data-panel="events"><span class="toggle-arrow">▸</span> الأحداث</button>
+      <button class="panelToggle" data-panel="saves"><span class="toggle-arrow">▸</span> حفظ/تحميل</button>
+      <button class="panelToggle" data-panel="newgame"><span class="toggle-arrow">▸</span> مباراة جديدة</button>
+      <button class="panelToggle" data-panel="advanced"><span class="toggle-arrow">▸</span> متقدم</button>
+    </div>
+
+    <!-- Suggestions Panel -->
+    <div class="panelContent" id="panel-suggestions">
+      <div class="sugList" id="sugList">
+        <div class="mut">اضغط "تحليل" لعرض الاقتراحات</div>
+      </div>
+    </div>
+
+    <!-- Atlas Panel -->
+    <div class="panelContent" id="panel-atlas">
+      <div class="sectionTitle">كل القطع (28)</div>
+      <div class="atlasGrid" id="atlas"></div>
+      <div style="height:10px"></div>
+      <div class="sectionTitle">رف الخصم (تقديري)</div>
+      <div class="handGrid" id="oppRack"></div>
+      <div style="height:10px"></div>
+      <div class="sectionTitle">احتمالات القطع</div>
+      <div class="row" id="cutProbBox"><span class="mut">اضغط تحليل لعرض الاحتمالات</span></div>
+    </div>
+
+    <!-- Events Panel -->
+    <div class="panelContent" id="panel-events">
+      <div class="eventsList" id="eventsList"><div class="mut">لا توجد أحداث</div></div>
+    </div>
+
+    <!-- Save/Load Panel -->
+    <div class="panelContent" id="panel-saves">
+      <div class="grid2">
+        <div>
+          <div class="sectionTitle">حفظ</div>
+          <div class="row">
+            <input id="saveName" class="input" placeholder="اسم (اختياري)" style="flex:1"/>
+            <button class="btn ok" id="btnDoSave">حفظ</button>
+          </div>
+        </div>
+        <div>
+          <div class="sectionTitle">تحميل / حذف</div>
+          <div class="row">
+            <select id="savesList" class="select" style="flex:1"><option value="">اختر...</option></select>
+            <button class="btn" id="btnDoLoad">تحميل</button>
+            <button class="btn bad small" id="btnDoDelete">🗑️</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- New Game Panel -->
+    <div class="panelContent" id="panel-newgame">
+      <div class="grid2">
+        <div>
+          <div class="sectionTitle">اختر 7 قطع</div>
+          <div class="atlasGrid" id="startPicker"></div>
+          <div class="row" style="margin-top:8px">
+            <span class="chip">المختار: <strong id="startCount">0</strong>/7</span>
+            <button class="btn small" id="startRand">🎲</button>
+            <button class="btn small" id="startClear">مسح</button>
+          </div>
+        </div>
+        <div>
+          <div class="sectionTitle">إعدادات</div>
+          <div class="row" style="margin-bottom:8px">
+            <span>الهدف:</span>
+            <input class="input" id="matchTarget" type="number" value="150" style="width:70px"/>
+            <span>يبدأ:</span>
+            <select id="startOpener" class="select">
+              <option value="me">أنا</option>
+              <option value="opponent">الخصم</option>
+            </select>
+          </div>
+          <div class="row">
+            <button class="btn primary" id="btnStartMatch">مباراة جديدة</button>
+            <button class="btn" id="btnStartRound">جولة جديدة</button>
+            <button class="btn warn" id="btnMidgame">من المنتصف</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Advanced Panel -->
+    <div class="panelContent" id="panel-advanced">
+      <div class="grid2">
+        <div>
+          <div class="sectionTitle">استيراد JSON</div>
+          <textarea id="importJson" class="input" style="width:100%;height:80px;font-family:monospace" placeholder='الصق JSON...'></textarea>
+          <button class="btn warn" id="btnImport" style="margin-top:6px">استيراد</button>
+        </div>
+        <div>
+          <div class="sectionTitle">تصدير</div>
+          <div class="row" style="margin-bottom:8px">
+            <a class="btn" id="btnExportState" href="#" target="_blank">الحالة</a>
+            <a class="btn" id="btnExportLog" href="#" target="_blank">السجل</a>
+            <a class="btn" id="btnRules" href="/api/rules" target="_blank">القواعد</a>
+          </div>
+          <div class="sectionTitle">تصحيح النقاط</div>
+          <div class="row">
+            <span>أنا:</span>
+            <input id="fixMyScore" class="input" type="number" value="0" style="width:60px"/>
+            <span>خصم:</span>
+            <input id="fixOppScore" class="input" type="number" value="0" style="width:60px"/>
+            <button class="btn ok" id="btnFixScore">✓</button>
+          </div>
+        </div>
+      </div>
+      <div style="height:10px"></div>
+      <div class="row">
+        <button class="btn warn" id="btnCorrMode">Correction: OFF</button>
+        <button class="btn" id="btnEditMode">Edit Mode</button>
+        <button class="btn ok" id="btnEditSave" style="display:none">حفظ التعديل</button>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<!-- ==========================================
+     MODALS
+========================================== -->
+
+<!-- Draw Modal -->
+<div class="overlay" id="drawModal">
+  <div class="modal" style="max-width:600px">
+    <div class="modalHead">
+      <h2>اختر القطعة التي سحبتها</h2>
+      <button class="btn" id="drawClose">✕</button>
+    </div>
+    <div class="atlasGrid" id="drawGrid"></div>
+    <div class="row" style="margin-top:12px">
+      <span class="chip">المختار: <strong id="drawPick">-</strong></span>
+      <button class="btn ok" id="drawConfirm">تأكيد</button>
+    </div>
+  </div>
+</div>
+
+<!-- Opponent Play Modal -->
+<div class="overlay" id="oppPlayModal">
+  <div class="modal" style="max-width:600px">
+    <div class="modalHead">
+      <h2>قطعة الخصم</h2>
+      <button class="btn" id="oppPlayClose">✕</button>
+    </div>
+    <div class="atlasGrid" id="oppPlayGrid"></div>
+    <div class="row" style="margin-top:12px">
+      <span class="chip">القطعة: <strong id="oppPlayPick">-</strong></span>
+      <span class="chip">الطرف: <strong id="oppPlayEnd">-</strong></span>
+    </div>
+    <div class="row" style="margin-top:8px">
+      <button class="endBtn" id="oppEndR" data-end="right">→ R</button>
+      <button class="endBtn" id="oppEndL" data-end="left">← L</button>
+      <button class="endBtn" id="oppEndU" data-end="up">↑ U</button>
+      <button class="endBtn" id="oppEndD" data-end="down">↓ D</button>
+      <button class="btn ok" id="oppPlayConfirm">تأكيد</button>
+    </div>
+  </div>
+</div>
+
+<!-- Midgame Modal -->
+<div class="overlay" id="midModal">
+  <div class="modal" style="max-width:850px">
+    <div class="modalHead">
+      <h2>بدء من المنتصف</h2>
+      <button class="btn" id="midClose">✕</button>
+    </div>
+    <div class="grid2">
+      <div>
+        <div class="sectionTitle">يدك (مثال: 6-6 6-1 5-3)</div>
+        <textarea id="midMyHand" class="input" style="width:100%;height:60px;font-family:monospace"></textarea>
+        <div class="row" style="margin-top:8px">
+          <span>الدور:</span>
+          <select id="midTurn" class="select"><option value="me">أنا</option><option value="opponent">الخصم</option></select>
+          <span>قطع الخصم:</span>
+          <input id="midOppCnt" class="input" type="number" value="7" style="width:50px"/>
+        </div>
+        <div class="row" style="margin-top:6px">
+          <span>نقاطي:</span>
+          <input id="midMyScore" class="input" type="number" value="0" style="width:55px"/>
+          <span>نقاط الخصم:</span>
+          <input id="midOppScore" class="input" type="number" value="0" style="width:55px"/>
+        </div>
+        <div class="row" style="margin-top:6px">
+          <span>الجولة:</span>
+          <input id="midRoundIdx" class="input" type="number" value="1" style="width:45px"/>
+          <span>الهدف:</span>
+          <input id="midTarget" class="input" type="number" value="150" style="width:60px"/>
+          <span>Forced:</span>
+          <input id="midForced" class="input" style="width:55px"/>
+        </div>
+      </div>
+      <div>
+        <div class="sectionTitle">الرقعة</div>
+        <div class="row" style="margin-bottom:6px">
+          <span>المركز:</span>
+          <input id="midCenter" class="input" style="width:60px"/>
+        </div>
+        <div class="grid2" style="gap:6px">
+          <div><span class="mut">يمين:</span><textarea id="midRight" class="input" style="width:100%;height:45px;font-family:monospace"></textarea></div>
+          <div><span class="mut">يسار:</span><textarea id="midLeft" class="input" style="width:100%;height:45px;font-family:monospace"></textarea></div>
+          <div><span class="mut">أعلى:</span><textarea id="midUp" class="input" style="width:100%;height:45px;font-family:monospace"></textarea></div>
+          <div><span class="mut">أسفل:</span><textarea id="midDown" class="input" style="width:100%;height:45px;font-family:monospace"></textarea></div>
+        </div>
+        <div class="row" style="margin-top:8px">
+          <span class="chip" id="midComputed">Invariant: -</span>
+          <button class="btn ok" id="midApply">تطبيق</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Pips Modal -->
+<div class="overlay" id="pipsModal">
+  <div class="modal" style="max-width:350px">
+    <div class="modalHead">
+      <h2>نقاط الفوز</h2>
+      <button class="btn" id="pipsClose">✕</button>
+    </div>
+    <p class="mut" style="margin-bottom:10px">مجموع نقاط الخصم المتبقية:</p>
+    <div class="row">
+      <input id="pipsVal" class="input" type="number" min="0" value="0" style="width:90px"/>
+      <button class="btn ok" id="pipsConfirm">تأكيد</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+<script>
+// ============================================================================
+// JAVASCRIPT - PART 2: CORE LOGIC
+// ============================================================================
+
+// ============================================
+// CONSTANTS
+// ============================================
+
+const $ = (id) => document.getElementById(id);
+
+const ALL_TILES = (() => {
+  const out = [];
+  for (let hi = 0; hi <= 6; hi++) {
+    for (let lo = 0; lo <= hi; lo++) {
+      out.push(`${hi}-${lo}`);
+    }
+  }
+  return out;
+})();
+
+const PIPS_MAP = {
+  0: [],
+  1: [4],
+  2: [0, 8],
+  3: [0, 4, 8],
+  4: [0, 2, 6, 8],
+  5: [0, 2, 4, 6, 8],
+  6: [0, 2, 3, 5, 6, 8]
+};
+
+const BEND_EVERY = 4;
+
+// ============================================
+// GLOBAL STATE
+// ============================================
+
+// Tab System
+const TABS = new Map();
+let ACTIVE_TAB = null;
+
+// Current Game State
+let LAST = null;
+let LAST_BELIEF = null;
+let LAST_SUGGESTIONS = [];
+
+// Selection
+let SEL_TILE = null;
+let SEL_PLAYER = null;
+let SEL_END = null;
+let PREVIEW = null;
+
+// UI State
+let USER_PANNED = false;
+let OPEN_PANEL = null;
+let OPP_DRAWER_OPEN = false;
+
+// Modes
+let CORR_MODE = false;
+let EDIT_MODE = false;
+let EDIT_HAND = null;
+let PIPS_MODAL_SHOWN = false;
+
+// Modal State
+let DRAW_PICK = null;
+let OPP_PLAY_PICK = null;
+let OPP_PLAY_END = null;
+
+// Start Game Picker
+const START_PICK = new Set();
+
+// ============================================
+// UTILITY FUNCTIONS
+// ============================================
+
+function toast(msg, type = "") {
+  const t = $("toast");
+  t.textContent = String(msg || "");
+  t.className = "toast show" + (type === "bad" ? " bad" : type === "ok" ? " ok" : "");
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.className = "toast", 2500);
+}
+
+function normalizeTileStr(s) {
+  s = String(s || "").trim().replace(/\|/g, "-");
+  const m = s.match(/^(\d)\s*-\s*(\d)$/);
+  if (!m) return null;
+  let a = Number(m[1]), b = Number(m[2]);
+  if (a < 0 || a > 6 || b < 0 || b > 6) return null;
+  if (a < b) [a, b] = [b, a];
+  return `${a}-${b}`;
+}
+
+function parseTilesText(text) {
+  const s = (text || "").trim();
+  if (!s) return [];
+  return [...new Set(
+    s.replace(/[\[\]\(\)]/g, " ")
+     .replace(/[,;]+/g, " ")
+     .split(/\s+/)
+     .map(x => x.trim())
+     .filter(Boolean)
+     .map(normalizeTileStr)
+     .filter(Boolean)
+  )];
+}
+
+function tileVals(tileStr) {
+  const m = String(tileStr || "").match(/^(\d)-(\d)$/);
+  if (!m) return null;
+  return [Number(m[1]), Number(m[2])];
+}
+
+function tileHas(tileStr, v) {
+  const t = tileVals(tileStr);
+  return !!t && (t[0] === v || t[1] === v);
+}
+
+function otherValue(tileStr, v) {
+  const t = tileVals(tileStr);
+  if (!t) return null;
+  if (t[0] === v) return t[1];
+  if (t[1] === v) return t[0];
+  return null;
+}
+
+function isDouble(tileStr) {
+  const t = tileVals(tileStr);
+  return !!t && t[0] === t[1];
+}
+
+function visibleSet(st) {
+  if (!st) return new Set();
+  const played = st.board?.played_tiles || [];
+  const mine = st.my_hand || [];
+  return new Set([...played, ...mine]);
+}
+
+function hiddenTiles(st) {
+  const vis = visibleSet(st);
+  return ALL_TILES.filter(t => !vis.has(t));
+}
+
+function computeLikelyTiles(st, belief) {
+  if (!st || !belief) return [];
+  
+  const cutProb = belief.cut_prob || [];
+  if (!cutProb.length) return [];
+  
+  const vis = visibleSet(st);
+  const hidden = ALL_TILES.filter(t => !vis.has(t));
+  
+  const weights = hidden.map(t => {
+    const [a, b] = t.split("-").map(Number);
+    const cutA = Number(cutProb[a] || 0);
+    const cutB = Number(cutProb[b] || 0);
+    const maxCut = Math.max(cutA, cutB);
+    return Math.max(0.01, 1.0 - 0.85 * maxCut);
+  });
+  
+  const sum = weights.reduce((x, y) => x + y, 0) || 1;
+  
+  const items = hidden.map((t, i) => ({
+    tile: t,
+    prob: weights[i] / sum
+  }));
+  
+  items.sort((a, b) => b.prob - a.prob);
+  return items;
+}
+
+// ============================================
+// API LAYER
+// ============================================
+
+function currentSessionId() {
+  if (!ACTIVE_TAB || !TABS.has(ACTIVE_TAB)) return "default";
+  return TABS.get(ACTIVE_TAB).sessionId;
+}
+
+async function api(path, body = null, method = "POST") {
+  const sid = currentSessionId();
+  
+  if (method === "GET") {
+    const url = path + (path.includes("?") ? "&" : "?") + `session_id=${encodeURIComponent(sid)}`;
+    const res = await fetch(url);
+    const txt = await res.text();
+    let data;
+    try { data = JSON.parse(txt); }
+    catch { throw new Error(`API error (${res.status}): ${txt.slice(0, 100)}`); }
+    if (!data.ok) throw new Error(data.error || "API error");
+    return data;
+  }
+  
+  const payload = body || {};
+  payload.session_id = sid;
+  
+  const res = await fetch(path, {
+    method,
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  });
+  
+  const txt = await res.text();
+  let data;
+  try { data = JSON.parse(txt); }
+  catch { throw new Error(`API error (${res.status}): ${txt.slice(0, 100)}`); }
+  if (!data.ok) throw new Error(data.error || "API error");
+  return data;
+}
+
+// ============================================
+// MULTI-TAB SYSTEM
+// ============================================
+
+function generateTabId() {
+  return 'tab_' + Date.now().toString(36) + Math.random().toString(36).substr(2, 4);
+}
+
+function createTab(sessionId = null, name = null) {
+  const tabId = generateTabId();
+  const sid = sessionId || `game_${Date.now()}`;
+  
+  TABS.set(tabId, {
+    sessionId: sid,
+    name: name || sid,
+    state: null,
+    belief: null,
+    suggestions: [],
+    created: Date.now()
+  });
+  
+  renderTabs();
+  switchToTab(tabId);
+  saveTabsToStorage();
+  
+  return tabId;
+}
+
+function closeTab(tabId) {
+  if (TABS.size <= 1) {
+    toast("لا يمكن إغلاق آخر تاب", "bad");
+    return;
+  }
+  
+  TABS.delete(tabId);
+  
+  if (ACTIVE_TAB === tabId) {
+    const firstTab = TABS.keys().next().value;
+    switchToTab(firstTab);
+  } else {
+    renderTabs();
+  }
+  
+  saveTabsToStorage();
+}
+
+function switchToTab(tabId) {
+  if (!TABS.has(tabId)) return;
+  
+  // Save current tab state
+  if (ACTIVE_TAB && TABS.has(ACTIVE_TAB)) {
+    const currentTab = TABS.get(ACTIVE_TAB);
+    currentTab.state = LAST;
+    currentTab.belief = LAST_BELIEF;
+    currentTab.suggestions = LAST_SUGGESTIONS;
+  }
+  
+  ACTIVE_TAB = tabId;
+  const tab = TABS.get(tabId);
+  
+  // Restore or fetch
+  if (tab.state) {
+    LAST = tab.state;
+    LAST_BELIEF = tab.belief;
+    LAST_SUGGESTIONS = tab.suggestions || [];
+    clearSelection();
+    renderAll();
+  } else {
+    refresh();
+  }
+  
+  renderTabs();
+  saveTabsToStorage();
+}
+
+function renameTab(tabId, newName) {
+  if (!TABS.has(tabId)) return;
+  TABS.get(tabId).name = newName;
+  renderTabs();
+  saveTabsToStorage();
+}
+
+function renderTabs() {
+  const container = $("tabsList");
+  container.innerHTML = "";
+  
+  TABS.forEach((tab, tabId) => {
+    const el = document.createElement("div");
+    el.className = "game-tab" + (tabId === ACTIVE_TAB ? " active" : "");
+    
+    const meta = tab.state?.meta || {};
+    const myScore = meta.my_score ?? 0;
+    const oppScore = meta.opponent_score ?? 0;
+    const roundIdx = meta.round_index ?? 1;
+    const turn = meta.current_turn;
+    const roundOver = meta.round_over;
+    
+    let indicatorClass = "";
+    if (!roundOver) {
+      if (turn === "me") indicatorClass = "my-turn";
+      else if (turn === "opponent") indicatorClass = "opp-turn";
+    }
+    
+    const displayName = tab.name.length > 12 ? tab.name.substring(0, 12) + "…" : tab.name;
+    
+    el.innerHTML = `
+      <span class="tab-indicator ${indicatorClass}"></span>
+      <span class="tab-name">${displayName}</span>
+      <span class="tab-score">${myScore}-${oppScore} R${roundIdx}</span>
+      <button class="tab-close" data-tabid="${tabId}">×</button>
+    `;
+    
+    el.onclick = (e) => {
+      if (e.target.classList.contains("tab-close")) {
+        e.stopPropagation();
+        closeTab(e.target.dataset.tabid);
+      } else {
+        switchToTab(tabId);
+      }
+    };
+    
+    el.ondblclick = (e) => {
+      if (e.target.classList.contains("tab-close")) return;
+      const newName = prompt("اسم جديد:", tab.name);
+      if (newName && newName.trim()) renameTab(tabId, newName.trim());
+    };
+    
+    container.appendChild(el);
+  });
+}
+
+function saveTabsToStorage() {
+  try {
+    const data = {
+      activeTab: ACTIVE_TAB,
+      tabs: []
+    };
+    TABS.forEach((tab, tabId) => {
+      data.tabs.push({ tabId, sessionId: tab.sessionId, name: tab.name, created: tab.created });
+    });
+    localStorage.setItem("domino_tabs", JSON.stringify(data));
+  } catch (e) { console.warn("Failed to save tabs:", e); }
+}
+
+function loadTabsFromStorage() {
+  try {
+    const raw = localStorage.getItem("domino_tabs");
+    if (!raw) return false;
+    
+    const data = JSON.parse(raw);
+    if (!data.tabs || !data.tabs.length) return false;
+    
+    data.tabs.forEach(t => {
+      TABS.set(t.tabId, {
+        sessionId: t.sessionId,
+        name: t.name || t.sessionId,
+        state: null,
+        belief: null,
+        suggestions: [],
+        created: t.created || Date.now()
+      });
+    });
+    
+    ACTIVE_TAB = (data.activeTab && TABS.has(data.activeTab)) ? data.activeTab : TABS.keys().next().value;
+    return true;
+  } catch (e) {
+    console.warn("Failed to load tabs:", e);
+    return false;
+  }
+}
+
+// ============================================
+// QUICK SAVE / LOAD
+// ============================================
+
+async function quickSave() {
+  if (!LAST) { toast("لا توجد مباراة", "bad"); return; }
+  
+  try {
+    const tab = TABS.get(ACTIVE_TAB);
+    const name = tab?.name || currentSessionId();
+    const d = await api("/api/save", { name, overwrite: true });
+    toast(`✓ تم الحفظ: ${d.saved_as}`, "ok");
+    refreshQuickLoadList();
+    refreshSavesList();
+  } catch (e) { toast(e.message, "bad"); }
+}
+
+async function refreshQuickLoadList() {
+  try {
+    const d = await api("/api/list_saves", null, "GET");
+    const select = $("quickLoadSelect");
+    select.innerHTML = '<option value="">📂 تحميل...</option>';
+    (d.saves || []).slice(0, 15).forEach(name => {
+      const opt = document.createElement("option");
+      opt.value = name;
+      opt.textContent = name.replace(".json", "");
+      select.appendChild(opt);
+    });
+  } catch (e) { console.warn("Failed to load saves:", e); }
+}
+
+async function quickLoad(name) {
+  if (!name) return;
+  
+  try {
+    const tabName = name.replace(".json", "");
+    const tabId = createTab(tabName, tabName);
+    
+    const d = await api("/api/load", { name });
+    LAST = d.state;
+    LAST_BELIEF = null;
+    LAST_SUGGESTIONS = [];
+    
+    if (TABS.has(tabId)) TABS.get(tabId).state = LAST;
+    
+    clearSelection();
+    renderAll();
+    renderTabs();
+    toast(`✓ تم التحميل: ${name}`, "ok");
+  } catch (e) { toast(e.message, "bad"); }
+}
+
+// ============================================
+// REFRESH & UPDATE
+// ============================================
+
+async function refresh() {
+  try {
+    const d = await api("/api/state", null, "GET");
+    LAST = d.state;
+    updateTabState();
+    renderTabs();
+    renderAll();
+  } catch (e) {
+    LAST = null;
+    renderAll();
+  }
+}
+
+function updateTabState() {
+  if (ACTIVE_TAB && TABS.has(ACTIVE_TAB)) {
+    const tab = TABS.get(ACTIVE_TAB);
+    tab.state = LAST;
+    tab.belief = LAST_BELIEF;
+    tab.suggestions = LAST_SUGGESTIONS;
+  }
+  renderTabs();
+}
+
+function clearSelection() {
+  SEL_TILE = null;
+  SEL_PLAYER = null;
+  SEL_END = null;
+  PREVIEW = null;
+  updateEndsUI();
+}
+
+function selectTile(tileStr, player) {
+  SEL_TILE = tileStr;
+  SEL_PLAYER = player;
+  SEL_END = null;
+  PREVIEW = null;
+
+  // لا Auto-Play إطلاقاً
+  updateEndsUI();
+  renderMyHand();
+  renderBoard();
+}
+
+// ============================================
+// LEGAL MOVES
+// ============================================
+
+function computeLegalEnds(st, tileStr) {
+  if (!st || !tileStr) return new Set();
+  
+  const b = st.board || {};
+  if (b.is_empty) return new Set(["right"]);
+  
+  const ends = b.ends || {};
+  const [a, bv] = tileStr.split("-").map(Number);
+  const ok = new Set();
+  
+  for (const [ename, vv] of Object.entries(ends)) {
+    if (!vv || vv.length === 0) continue;
+    const openV = Number(vv[0]);
+    if (a === openV || bv === openV) ok.add(ename);
+  }
+  
+  return ok;
+}
+
+function updateEndsUI() {
+  const ends = ["right", "left", "up", "down"];
+  const btns = { right: $("endR"), left: $("endL"), up: $("endU"), down: $("endD") };
+  
+  ends.forEach(e => {
+    btns[e].disabled = true;
+    btns[e].classList.remove("on");
+  });
+  
+  const info = $("selInfo");
+  
+  if (!SEL_TILE || !LAST) {
+    info.textContent = "اختر قطعة من يدك";
+    return;
+  }
+  
+  const legal = computeLegalEnds(LAST, SEL_TILE);
+  const legalArr = [...legal];
+  
+  info.textContent = `${SEL_TILE} | ${SEL_PLAYER === "me" ? "أنا" : "الخصم"} | ${legalArr.join(", ") || "-"}`;
+  
+  legalArr.forEach(e => {
+    btns[e].disabled = false;
+    if (SEL_END === e) btns[e].classList.add("on");
+  });
+}
+
+// ============================================
+// PLAY ACTIONS
+// ============================================
+
+async function attemptPlay(end) {
+  if (!LAST || !SEL_TILE || !SEL_PLAYER) return;
+  
+  try {
+    if (LAST.meta?.round_over) throw new Error("الجولة انتهت");
+    
+    const legal = computeLegalEnds(LAST, SEL_TILE);
+    if (!legal.has(end)) throw new Error("طرف غير قانوني");
+    
+    // Check turn
+    const turn = LAST.meta?.current_turn;
+    if (turn !== SEL_PLAYER) {
+      if (!CORR_MODE) {
+        throw new Error(`ليس دور ${SEL_PLAYER === "me" ? "أنا" : "الخصم"}.`);
+      }
+
+      // Correction Mode: لا تلعب تلقائياً بعد تغيير الدور
+      const ok = confirm(`ليس دور ${SEL_PLAYER}. هل تريد تغيير الدور إلى ${SEL_PLAYER}؟ (Correction)`);
+      if (!ok) return;
+
+      await api("/api/set_turn", { current_turn: SEL_PLAYER });
+      const st = await api("/api/state", null, "GET");
+      LAST = st.state;
+      updateTabState();
+      renderAll();
+      toast("تم تغيير الدور (Correction). الآن نفّذ النقلة مرة أخرى.", "ok");
+      return;
+    }
+    
+    // Validate tile
+    const mine = new Set(LAST.my_hand || []);
+    const vis = visibleSet(LAST);
+    
+    if (SEL_PLAYER === "me" && !mine.has(SEL_TILE)) throw new Error("القطعة ليست في يدك");
+    if (SEL_PLAYER === "opponent" && vis.has(SEL_TILE)) throw new Error("القطعة مرئية");
+    
+    const playedBy = SEL_PLAYER; // خزّن قبل clearSelection
+    
+    const d = await api("/api/play", { player: SEL_PLAYER, tile: SEL_TILE, end });
+    LAST = d.state;
+    updateTabState();
+    clearSelection();
+    USER_PANNED = false;
+    renderAll();
+    
+    // Auto analyze فقط إذا كان الذي لعب هو الخصم وصار دورك
+    if (playedBy === "opponent") {
+      setTimeout(autoAnalyzeAfterOppPlay, 250);
+    }
+    
+  } catch (e) {
+    toast(e.message, "bad");
+    await refresh();
+  }
+}
+
+async function drawMe() {
+  if (!LAST || LAST.meta?.round_over || LAST.meta?.current_turn !== "me") {
+    toast("السحب غير متاح", "bad");
+    return;
+  }
+  openDrawModal();
+}
+
+async function confirmDrawMe() {
+  if (!DRAW_PICK) { toast("اختر قطعة", "bad"); return; }
+  
+  try {
+    const d = await api("/api/draw_me", { tile: DRAW_PICK });
+    LAST = d.state;
+    updateTabState();
+    $("drawModal").classList.remove("show");
+    
+    if (LAST.meta?.must_draw_me) {
+      toast(`تم السحب: ${DRAW_PICK} - مطلوب سحب آخر`, "ok");
+      openDrawModal();
+    } else {
+      toast(`✓ تم السحب: ${DRAW_PICK}`, "ok");
+      renderAll();
+    }
+  } catch (e) {
+    toast(e.message, "bad");
+    await refresh();
+  }
+}
+
+async function passMe() {
+  if (!LAST || LAST.meta?.round_over || LAST.meta?.current_turn !== "me" || !LAST.meta?.must_pass_me) {
+    toast("التمرير غير متاح", "bad");
+    return;
+  }
+  
+  try {
+    const d = await api("/api/pass", { player: "me", certainty: "certain" });
+    LAST = d.state;
+    updateTabState();
+    renderAll();
+    toast("✓ تم التمرير", "ok");
+  } catch (e) {
+    toast(e.message, "bad");
+    await refresh();
+  }
+}
+
+// ============================================
+// OPPONENT ACTIONS
+// ============================================
+
+async function oppDraw(count) {
+  if (!LAST || LAST.meta?.round_over) { toast("غير متاح", "bad"); return; }
+  
+  const turn = LAST.meta?.current_turn;
+  if (turn !== "opponent" && !CORR_MODE) { toast("ليس دور الخصم", "bad"); return; }
+  
+  try {
+    if (turn !== "opponent" && CORR_MODE) {
+      await api("/api/set_turn", { current_turn: "opponent" });
+    }
+    const certainty = $("oppCert").value || "probable";
+    const d = await api("/api/draw", { player: "opponent", count, certainty });
+    LAST = d.state;
+    updateTabState();
+    renderAll();
+    toast(`✓ الخصم سحب x${count}`, "ok");
+  } catch (e) {
+    toast(e.message, "bad");
+    await refresh();
+  }
+}
+
+async function oppPass() {
+  if (!LAST || LAST.meta?.round_over) { toast("غير متاح", "bad"); return; }
+  
+  const turn = LAST.meta?.current_turn;
+  if (turn !== "opponent" && !CORR_MODE) { toast("ليس دور الخصم", "bad"); return; }
+  
+  try {
+    if (turn !== "opponent" && CORR_MODE) {
+      await api("/api/set_turn", { current_turn: "opponent" });
+    }
+    const certainty = $("oppCert").value || "certain";
+    const d = await api("/api/pass", { player: "opponent", certainty });
+    LAST = d.state;
+    updateTabState();
+    renderAll();
+    toast("✓ الخصم مرر", "ok");
+  } catch (e) {
+    toast(e.message, "bad");
+    await refresh();
+  }
+}
+
+async function oppOpen() {
+  if (!LAST || !LAST.board?.is_empty) {
+    toast("الخصم يفتح فقط والرقعة فارغة", "bad");
+    return;
+  }
+  
+  try {
+    const d = await api("/api/set_turn", { current_turn: "opponent" });
+    LAST = d.state;
+    updateTabState();
+    renderAll();
+    toast("✓ الآن اختر قطعة الخصم", "ok");
+  } catch (e) { toast(e.message, "bad"); }
+}
+
+function openOppPlayModal() {
+  if (!LAST || LAST.meta?.round_over) {
+    toast("الجولة انتهت", "bad");
+    return;
+  }
+  OPP_PLAY_PICK = null;
+  OPP_PLAY_END = null;
+  renderOppPlayModal();
+  $("oppPlayModal").classList.add("show");
+}
+
+function renderOppPlayModal() {
+  const grid = $("oppPlayGrid");
+  grid.innerHTML = "";
+  
+  const hidden = hiddenTiles(LAST);
+  
+  hidden.forEach(t => {
+    const el = document.createElement("div");
+    el.className = "tileBtn hidden" + (OPP_PLAY_PICK === t ? " sel" : "");
+    el.textContent = t;
+    el.onclick = () => {
+      OPP_PLAY_PICK = t;
+      $("oppPlayPick").textContent = t;
+      updateOppPlayEnds();
+      renderOppPlayModal();
+    };
+    grid.appendChild(el);
+  });
+}
+
+function updateOppPlayEnds() {
+  const ends = ["right", "left", "up", "down"];
+  const btns = { right: $("oppEndR"), left: $("oppEndL"), up: $("oppEndU"), down: $("oppEndD") };
+  
+  if (!OPP_PLAY_PICK || !LAST) {
+    ends.forEach(e => { btns[e].disabled = true; btns[e].classList.remove("on"); });
+    return;
+  }
+  
+  const legal = computeLegalEnds(LAST, OPP_PLAY_PICK);
+  ends.forEach(e => {
+    btns[e].disabled = !legal.has(e);
+    btns[e].classList.toggle("on", OPP_PLAY_END === e);
+  });
+  $("oppPlayEnd").textContent = OPP_PLAY_END || "-";
+}
+
+async function confirmOppPlay() {
+  if (!OPP_PLAY_PICK || !OPP_PLAY_END) {
+    toast("اختر قطعة وطرف", "bad");
+    return;
+  }
+
+  // اجعل الاختيار الرسمي عبر نفس النظام
+  SEL_TILE = OPP_PLAY_PICK;
+  SEL_PLAYER = "opponent";
+  SEL_END = OPP_PLAY_END;
+
+  const ok = await attemptPlay(OPP_PLAY_END); // لو attemptPlay لا يرجع قيمة، تجاهل ok
+  $("oppPlayModal").classList.remove("show");
+}
+
+// ============================================
+// UNDO / REDO
+// ============================================
+
+async function undo() {
+  try {
+    const d = await api("/api/undo", {});
+    LAST = d.state;
+    updateTabState();
+    clearSelection();
+    renderAll();
+  } catch (e) { toast(e.message, "bad"); }
+}
+
+async function redo() {
+  try {
+    const d = await api("/api/redo", {});
+    LAST = d.state;
+    updateTabState();
+    renderAll();
+  } catch (e) { toast(e.message, "bad"); }
+}
+
+// ============================================
+// ANALYZE
+// ============================================
+
+let AUTO_ANALYZE_AFTER_OPP_PLAY = true;
+
+async function autoAnalyzeAfterOppPlay() {
+  if (!AUTO_ANALYZE_AFTER_OPP_PLAY) return;
+  if (!LAST || LAST.meta?.round_over) return;
+  if (LAST.meta?.current_turn !== "me") return;
+
+  // نفس إعدادات المستخدم
+  const level = $("analysisLevel").value || "rust";
+  const det = Number($("det").value) || 20;
+  const thinkMs = Number($("thinkMs").value) || 2000;
+
+  try {
+    const d = await api("/api/suggest", {
+      top_n: 6,
+      determinizations: det,
+      analysis_level: level,
+      think_ms: thinkMs
+    });
+
+    LAST = d.state;
+    LAST_BELIEF = d.belief || null;
+    LAST_SUGGESTIONS = d.suggestions || [];
+    updateTabState();
+
+    // لا تعيد كل شيء إن أردت السرعة: يكفي هذه
+    renderSuggestions();
+    renderOppRack();
+    renderCutProb();
+    showBestMove();
+  } catch (e) {
+    // صامت حتى لا يزعج اللايف
+    console.warn("autoAnalyzeAfterOppPlay failed:", e);
+  }
+}
+
+async function analyze() {
+  if (!LAST || LAST.meta?.round_over || LAST.meta?.current_turn !== "me") {
+    toast("التحليل متاح في دورك فقط", "bad");
+    return;
+  }
+  
+  try {
+    $("btnAnalyze").disabled = true;
+    toast("جار التحليل...");
+    
+    const level = $("analysisLevel").value || "rust";
+    const det = Number($("det").value) || 20;
+    const thinkMs = Number($("thinkMs").value) || 2000;
+    
+    const d = await api("/api/suggest", { top_n: 6, determinizations: det, analysis_level: level, think_ms: thinkMs });
+    
+    LAST = d.state;
+    LAST_BELIEF = d.belief || null;
+    LAST_SUGGESTIONS = d.suggestions || [];
+    
+    updateTabState();
+    renderAll();
+    renderSuggestions();
+    renderCutProb();
+    showBestMove();
+    
+    toast("✓ تم التحليل", "ok");
+  } catch (e) { toast(e.message, "bad"); }
+  finally { $("btnAnalyze").disabled = false; }
+}
+
+async function playBest() {
+  if (!LAST || LAST.meta?.round_over || LAST.meta?.current_turn !== "me") {
+    toast("غير متاح", "bad");
+    return;
+  }
+  
+  try {
+    $("btnPlayBest").disabled = true;
+    toast("جار التنفيذ...");
+    
+    const det = Number($("det").value) || 20;
+    const thinkMs = Number($("thinkMs").value) || 2000;
+    
+    const d = await api("/api/play_best", { determinizations: det, think_ms: thinkMs });
+    
+    LAST = d.state;
+    LAST_SUGGESTIONS = d.suggestions || [];
+    
+    updateTabState();
+    clearSelection();
+    renderAll();
+    toast("✓ تم", "ok");
+  } catch (e) {
+    toast(e.message, "bad");
+    await refresh();
+  }
+  finally { $("btnPlayBest").disabled = false; }
+}
+
+function showBestMove() {
+  const card = $("bestMoveCard");
+  if (!LAST_SUGGESTIONS || !LAST_SUGGESTIONS.length) {
+    card.classList.remove("show");
+    return;
+  }
+  
+  const best = LAST_SUGGESTIONS[0];
+  $("bestMoveText").textContent = `${best.tile} → ${best.end}`;
+  $("bestMoveScore").textContent = `+${best.immediate_points || 0}`;
+  card.classList.add("show");
+}
+
+function applyBestMove() {
+  if (!LAST_SUGGESTIONS || !LAST_SUGGESTIONS.length) return;
+  const best = LAST_SUGGESTIONS[0];
+  selectTile(best.tile, "me");
+  SEL_END = best.end;
+  attemptPlay(best.end);
+}
+
+// ============================================
+// NEW GAME / NEW ROUND
+// ============================================
+
+async function startMatch() {
+  if (START_PICK.size !== 7) { toast("اختر 7 قطع", "bad"); return; }
+  
+  try {
+    const hand = [...START_PICK];
+    const target = Number($("matchTarget").value) || 150;
+    const opener = $("startOpener").value;
+    
+    const d = await api("/api/new_game", { my_hand: hand, match_target: target });
+    LAST = d.state;
+    
+    if (opener === "opponent") {
+      const t = await api("/api/set_turn", { current_turn: "opponent" });
+      LAST = t.state;
+    }
+    
+    LAST_BELIEF = null;
+    LAST_SUGGESTIONS = [];
+    updateTabState();
+    clearSelection();
+    closePanel();
+    renderAll();
+    toast("✓ بدأت المباراة", "ok");
+  } catch (e) { toast(e.message, "bad"); }
+}
+
+async function startRound() {
+  if (START_PICK.size !== 7) { toast("اختر 7 قطع", "bad"); return; }
+  if (!LAST) { toast("ابدأ مباراة أولاً", "bad"); return; }
+  
+  try {
+    const hand = [...START_PICK];
+    const opener = $("startOpener").value;
+    
+    const d = await api("/api/new_round", { my_hand: hand });
+    LAST = d.state;
+    
+    if (opener === "opponent") {
+      const t = await api("/api/set_turn", { current_turn: "opponent" });
+      LAST = t.state;
+    }
+    
+    LAST_BELIEF = null;
+    LAST_SUGGESTIONS = [];
+    updateTabState();
+    clearSelection();
+    closePanel();
+    renderAll();
+    toast("✓ بدأت الجولة", "ok");
+  } catch (e) { toast(e.message, "bad"); }
+}
+
+// ============================================
+// MIDGAME
+// ============================================
+
+function openMidgameModal() {
+  $("midModal").classList.add("show");
+  computeMidInvariant();
+}
+
+function computeMidInvariant() {
+  const my = parseTilesText($("midMyHand").value);
+  const center = normalizeTileStr($("midCenter").value);
+  const r = parseTilesText($("midRight").value);
+  const l = parseTilesText($("midLeft").value);
+  const u = parseTilesText($("midUp").value);
+  const d = parseTilesText($("midDown").value);
+  
+  const played = [...new Set([...(center ? [center] : []), ...r, ...l, ...u, ...d])];
+  const opp = Number($("midOppCnt").value || 0);
+  const bone = 28 - my.length - played.length - opp;
+  
+  const el = $("midComputed");
+  el.textContent = `يد(${my.length}) + ملعوب(${played.length}) + خصم(${opp}) = ${28 - bone}/28 | bone=${bone}`;
+  el.style.color = bone >= 0 ? "var(--ok)" : "var(--bad)";
+}
+
+async function applyMidgame() {
+  try {
+    const my_hand = parseTilesText($("midMyHand").value);
+    if (!my_hand.length) { toast("أدخل يدك", "bad"); return; }
+    
+    const center = normalizeTileStr($("midCenter").value);
+    
+    const payload = {
+      my_hand,
+      current_turn: $("midTurn").value || "me",
+      opponent_tile_count: Number($("midOppCnt").value || 7),
+      my_score: Number($("midMyScore").value || 0),
+      opponent_score: Number($("midOppScore").value || 0),
+      round_index: Number($("midRoundIdx").value || 1),
+      match_target: Number($("midTarget").value || 150),
+      forced_play_tile: normalizeTileStr($("midForced").value) || null,
+      board: {
+        center_tile: center || null,
+        arms: {
+          right: parseTilesText($("midRight").value),
+          left: parseTilesText($("midLeft").value),
+          up: parseTilesText($("midUp").value),
+          down: parseTilesText($("midDown").value)
+        }
+      }
+    };
+    
+    const d = await api("/api/setup_midgame", payload);
+    LAST = d.state;
+    LAST_BELIEF = null;
+    LAST_SUGGESTIONS = [];
+    
+    updateTabState();
+    clearSelection();
+    $("midModal").classList.remove("show");
+    renderAll();
+    toast("✓ تم تطبيق المنتصف", "ok");
+  } catch (e) { toast(e.message, "bad"); }
+}
+
+// ============================================
+// PIPS MODAL
+// ============================================
+
+function checkPipsModal() {
+  const shouldShow = !!LAST?.meta?.pending_out_opponent_pips;
+  if (shouldShow && !PIPS_MODAL_SHOWN) {
+    PIPS_MODAL_SHOWN = true;
+    $("pipsVal").value = "0";
+    $("pipsModal").classList.add("show");
+  } else if (!shouldShow) {
+    PIPS_MODAL_SHOWN = false;
+  }
+}
+
+async function confirmPips() {
+  const val = Number($("pipsVal").value) || 0;
+  if (val < 0) { toast("قيمة غير صالحة", "bad"); return; }
+  
+  try {
+    const d = await api("/api/finalize_out", { opponent_pips: val });
+    LAST = d.state;
+    updateTabState();
+    $("pipsModal").classList.remove("show");
+    renderAll();
+    toast("✓ تم", "ok");
+  } catch (e) { toast(e.message, "bad"); }
+}
+
+// ============================================
+// IMPORT / EXPORT
+// ============================================
+
+function updateExportLinks() {
+  const sid = currentSessionId();
+  const stateLink = $("btnExportState");
+  const logLink = $("btnExportLog");
+  if (stateLink) stateLink.href = `/api/export_state?session_id=${encodeURIComponent(sid)}`;
+  if (logLink) logLink.href = `/api/export_log?session_id=${encodeURIComponent(sid)}`;
+}
+
+async function importJson() {
+  const raw = ($("importJson").value || "").trim();
+  if (!raw) { toast("الصق JSON أولاً", "bad"); return; }
+  
+  let obj;
+  try { obj = JSON.parse(raw); }
+  catch { toast("JSON غير صالح", "bad"); return; }
+  
+  try {
+    const d = await api("/api/import_state", { state: obj });
+    LAST = d.state;
+    LAST_BELIEF = null;
+    LAST_SUGGESTIONS = [];
+    updateTabState();
+    clearSelection();
+    renderAll();
+    $("importJson").value = "";
+    toast("✓ تم الاستيراد", "ok");
+  } catch (e) { toast(e.message, "bad"); }
+}
+
+async function fixScore() {
+  if (!LAST) { toast("لا توجد مباراة", "bad"); return; }
+  
+  try {
+    const d = await api("/api/state", null, "GET");
+    const st = d.state;
+    st.meta.my_score = Number($("fixMyScore").value) || 0;
+    st.meta.opponent_score = Number($("fixOppScore").value) || 0;
+    
+    const r = await api("/api/import_state", { state: st });
+    LAST = r.state;
+    updateTabState();
+    renderAll();
+    toast("✓ تم", "ok");
+  } catch (e) { toast(e.message, "bad"); }
+}
+
+// ============================================
+// CORRECTION / EDIT MODE
+// ============================================
+
+function toggleCorrMode() {
+  CORR_MODE = !CORR_MODE;
+  const btn = $("btnCorrMode");
+  btn.textContent = `Correction: ${CORR_MODE ? "ON" : "OFF"}`;
+  btn.classList.toggle("ok", CORR_MODE);
+  btn.classList.toggle("warn", !CORR_MODE);
+  toast(CORR_MODE ? "Correction ON" : "Correction OFF", "ok");
+}
+
+function toggleEditMode() {
+  if (!LAST) { toast("لا توجد مباراة", "bad"); return; }
+  
+  const btn = $("btnEditMode");
+  const saveBtn = $("btnEditSave");
+  
+  if (EDIT_MODE) {
+    EDIT_MODE = false;
+    EDIT_HAND = null;
+    btn.textContent = "Edit Mode";
+    btn.classList.remove("ok");
+    saveBtn.style.display = "none";
+    renderAll();
+  } else {
+    EDIT_MODE = true;
+    EDIT_HAND = new Set(LAST.my_hand || []);
+    btn.textContent = "Edit: ON";
+    btn.classList.add("ok");
+    saveBtn.style.display = "";
+    saveBtn.textContent = `حفظ (${EDIT_HAND.size})`;
+    toast("Edit Mode: اختر من Atlas", "ok");
+    if (OPEN_PANEL !== "atlas") togglePanel("atlas");
+    renderAtlas();
+  }
+}
+
+async function saveEditHand() {
+  if (!LAST || !EDIT_MODE || !EDIT_HAND) return;
+  
+  try {
+    const d = await api("/api/state", null, "GET");
+    const st = d.state;
+    
+    const played = new Set(st.board?.played_tiles || []);
+    for (const t of EDIT_HAND) {
+      if (played.has(t)) throw new Error(`${t} على الرقعة`);
+    }
+    
+    st.my_hand = [...EDIT_HAND].sort();
+    const oppCnt = Number(st.meta?.opponent_tile_count ?? 0);
+    st.meta.boneyard_count = 28 - EDIT_HAND.size - played.size - oppCnt;
+    
+    if (st.meta.boneyard_count < 0) throw new Error("عدد غير صحيح");
+    
+    const r = await api("/api/import_state", { state: st });
+    LAST = r.state;
+    updateTabState();
+    
+    EDIT_MODE = false;
+    EDIT_HAND = null;
+    $("btnEditMode").textContent = "Edit Mode";
+    $("btnEditMode").classList.remove("ok");
+    $("btnEditSave").style.display = "none";
+    
+    renderAll();
+    toast("✓ تم", "ok");
+  } catch (e) { toast(e.message, "bad"); }
+}
+
+// ============================================
+// SAVES PANEL
+// ============================================
+
+async function refreshSavesList() {
+  try {
+    const d = await api("/api/list_saves", null, "GET");
+    const select = $("savesList");
+    select.innerHTML = '<option value="">اختر...</option>';
+    (d.saves || []).forEach(name => {
+      const opt = document.createElement("option");
+      opt.value = name;
+      opt.textContent = name.replace(".json", "");
+      select.appendChild(opt);
+    });
+  } catch (e) { console.warn(e); }
+}
+
+async function doSave() {
+  if (!LAST) { toast("لا توجد مباراة", "bad"); return; }
+  try {
+    const name = $("saveName").value.trim() || null;
+    const d = await api("/api/save", { name });
+    toast(`✓ ${d.saved_as}`, "ok");
+    refreshSavesList();
+    refreshQuickLoadList();
+  } catch (e) { toast(e.message, "bad"); }
+}
+
+async function doLoad() {
+  const name = $("savesList").value;
+  if (!name) { toast("اختر ملف", "bad"); return; }
+  await quickLoad(name);
+  closePanel();
+}
+
+async function doDelete() {
+  const name = $("savesList").value;
+  if (!name) { toast("اختر ملف", "bad"); return; }
+  if (!confirm(`حذف ${name}؟`)) return;
+  try {
+    await api("/api/delete_save", { name });
+    toast("✓ تم الحذف", "ok");
+    refreshSavesList();
+    refreshQuickLoadList();
+  } catch (e) { toast(e.message, "bad"); }
+}
+
+// ============================================
+// PANELS
+// ============================================
+
+function togglePanel(panelId) {
+  const panel = $(`panel-${panelId}`);
+  const toggle = document.querySelector(`[data-panel="${panelId}"]`);
+  
+  if (OPEN_PANEL === panelId) {
+    panel.classList.remove("show");
+    toggle.classList.remove("active");
+    OPEN_PANEL = null;
+  } else {
+    if (OPEN_PANEL) {
+      $(`panel-${OPEN_PANEL}`).classList.remove("show");
+      document.querySelector(`[data-panel="${OPEN_PANEL}"]`).classList.remove("active");
+    }
+    panel.classList.add("show");
+    toggle.classList.add("active");
+    OPEN_PANEL = panelId;
+    
+    if (panelId === "saves") refreshSavesList();
+    else if (panelId === "newgame") renderStartPicker();
+  }
+}
+
+function closePanel() {
+  if (OPEN_PANEL) {
+    $(`panel-${OPEN_PANEL}`).classList.remove("show");
+    document.querySelector(`[data-panel="${OPEN_PANEL}"]`).classList.remove("active");
+    OPEN_PANEL = null;
+  }
+}
+
+function toggleOppDrawer() {
+  OPP_DRAWER_OPEN = !OPP_DRAWER_OPEN;
+  $("oppDrawer").classList.toggle("open", OPP_DRAWER_OPEN);
+}
+
+// ============================================
+// DRAW MODAL
+// ============================================
+
+function openDrawModal() {
+  DRAW_PICK = null;
+  $("drawPick").textContent = "-";
+  
+  const grid = $("drawGrid");
+  grid.innerHTML = "";
+  
+  hiddenTiles(LAST).forEach(t => {
+    const el = document.createElement("div");
+    el.className = "tileBtn hidden";
+    el.textContent = t;
+    el.onclick = () => {
+      DRAW_PICK = t;
+      $("drawPick").textContent = t;
+      grid.querySelectorAll(".tileBtn").forEach(x => x.classList.remove("sel"));
+      el.classList.add("sel");
+    };
+    grid.appendChild(el);
+  });
+  
+  $("drawModal").classList.add("show");
+}
+
+// ============================================
+// START PICKER
+// ============================================
+
+function renderStartPicker() {
+  const grid = $("startPicker");
+  grid.innerHTML = "";
+  
+  ALL_TILES.forEach(t => {
+    const el = document.createElement("div");
+    el.className = "tileBtn hidden" + (START_PICK.has(t) ? " sel" : "");
+    el.textContent = t;
+    el.onclick = () => {
+      if (START_PICK.has(t)) START_PICK.delete(t);
+      else if (START_PICK.size < 7) START_PICK.add(t);
+      $("startCount").textContent = START_PICK.size;
+      renderStartPicker();
+    };
+    grid.appendChild(el);
+  });
+}
+
+function randomHand() {
+  const arr = [...ALL_TILES].sort(() => Math.random() - 0.5);
+  START_PICK.clear();
+  arr.slice(0, 7).forEach(t => START_PICK.add(t));
+  $("startCount").textContent = "7";
+  renderStartPicker();
+}
+
+function clearStartPick() {
+  START_PICK.clear();
+  $("startCount").textContent = "0";
+  renderStartPicker();
+}
+
+// ============================================
+// ZOOM
+// ============================================
+
+function applyZoom() {
+  const z = Number($("zoom").value) || 85;
+  $("zoomVal").textContent = `${z}%`;
+  $("world").style.transform = `scale(${z / 100})`;
+}
+
+function fitBoard() {
+  const viewport = $("viewport");
+  const world = $("world");
+  if (!world.scrollWidth || !viewport.clientWidth) return;
+  
+  const scaleX = (viewport.clientWidth - 30) / world.scrollWidth;
+  const scaleY = (viewport.clientHeight - 30) / world.scrollHeight;
+  const scale = Math.min(scaleX, scaleY, 1.2);
+  
+  $("zoom").value = Math.max(50, Math.min(120, Math.round(scale * 100)));
+  applyZoom();
+}
+</script>
+<script>
+// ============================================================================
+// JAVASCRIPT - PART 3: RENDERING + EVENTS + INITIALIZATION
+// ============================================================================
+
+// ============================================
+// SERPENTINE LAYOUT HELPERS
+// ============================================
+
+function dirVec(dir) {
+  if (dir === "right") return [1, 0];
+  if (dir === "left") return [-1, 0];
+  if (dir === "up") return [0, -1];
+  if (dir === "down") return [0, 1];
+  return [1, 0];
+}
+
+function dirForSegment(arm, segIdx) {
+  const m = segIdx % 4;
+  if (arm === "right") return ["right", "up", "left", "up"][m];
+  if (arm === "left") return ["left", "down", "right", "down"][m];
+  if (arm === "up") return ["up", "right", "up", "left"][m];
+  if (arm === "down") return ["down", "left", "down", "right"][m];
+  return arm;
+}
+
+function tileOrientationForDir(dir) {
+  return (dir === "up" || dir === "down") ? "vert" : "horiz";
+}
+
+function orientedHalvesForDir(dir, inVal, outVal) {
+  if (dir === "right") return [inVal, outVal];
+  if (dir === "left") return [outVal, inVal];
+  if (dir === "up") return [outVal, inVal];
+  if (dir === "down") return [inVal, outVal];
+  return [inVal, outVal];
+}
+
+function armPosSerpentine(arm, k, step, cx, cy) {
+  const idx0 = k - 1;
+  const seg = Math.floor(idx0 / BEND_EVERY);
+  const posInSeg = (idx0 % BEND_EVERY) + 1;
+
+  let dxSum = 0, dySum = 0;
+  for (let s = 0; s < seg; s++) {
+    const d = dirForSegment(arm, s);
+    const [dx, dy] = dirVec(d);
+    dxSum += dx * BEND_EVERY;
+    dySum += dy * BEND_EVERY;
+  }
+
+  const dNow = dirForSegment(arm, seg);
+  const [dx, dy] = dirVec(dNow);
+
+  return {
+    x: cx + (dxSum + dx * posInSeg) * step,
+    y: cy + (dySum + dy * posInSeg) * step,
+    dir: dNow
+  };
+}
+
+// ============================================
+// BUILD DOMINO NODE
+// ============================================
+
+function buildDominoNode(a, b, vert = false, cls = "") {
+  const node = document.createElement("div");
+  node.className = "domino" + (vert ? " vert" : "") + (cls ? " " + cls : "");
+
+  const h1 = document.createElement("div");
+  h1.className = "half";
+  const h2 = document.createElement("div");
+  h2.className = "half";
+
+  const addPips = (half, n) => {
+    (PIPS_MAP[n] || []).forEach(i => {
+      const p = document.createElement("div");
+      p.className = "pip";
+      p.style.gridRow = String(Math.floor(i / 3) + 1);
+      p.style.gridColumn = String((i % 3) + 1);
+      half.appendChild(p);
+    });
+  };
+
+  addPips(h1, Number(a));
+  addPips(h2, Number(b));
+  node.appendChild(h1);
+  node.appendChild(h2);
+
+  return node;
+}
+
+// ============================================
+// RENDER: TURN BAR
+// ============================================
+
+function renderTurnBar() {
+  const bar = $("turnBar");
+  const text = $("turnText");
+  const info = $("turnInfo");
+
+  if (!LAST) {
+    bar.className = "turnBar no-session";
+    text.textContent = "ابدأ مباراة جديدة";
+    info.style.display = "none";
+    return;
+  }
+
+  const meta = LAST.meta || {};
+  const turn = meta.current_turn;
+  const roundOver = meta.round_over;
+
+  info.style.display = "flex";
+  $("dispMyScore").textContent = meta.my_score ?? 0;
+  $("dispOppScore").textContent = meta.opponent_score ?? 0;
+  $("dispRound").textContent = meta.round_index ?? 1;
+  $("dispBone").textContent = meta.boneyard_count ?? 0;
+  $("dispOppTiles").textContent = meta.opponent_tile_count ?? 0;
+
+  if (roundOver) {
+    bar.className = "turnBar round-over";
+    const reason = meta.round_end_reason || "";
+    if (reason.includes("me")) text.textContent = "🎉 فزت بالجولة!";
+    else if (reason.includes("opponent")) text.textContent = "😔 الخصم فاز";
+    else text.textContent = "🔒 قفل";
+  } else if (turn === "me") {
+    bar.className = "turnBar my-turn";
+    if (meta.forced_play_tile) text.textContent = `⚡ دورك! يجب لعب ${meta.forced_play_tile}`;
+    else if (meta.must_draw_me) text.textContent = "⚡ دورك! يجب السحب";
+    else if (meta.must_pass_me) text.textContent = "⚡ دورك! يجب التمرير";
+    else text.textContent = "⚡ دورك الآن!";
+  } else {
+    bar.className = "turnBar opp-turn";
+    text.textContent = "⏳ دور الخصم";
+  }
+}
+
+// ============================================
+// RENDER: MY HAND
+// ============================================
+
+function renderMyHand() {
+  const container = $("myHand");
+  container.innerHTML = "";
+
+  if (!LAST) {
+    container.innerHTML = '<span class="mut">لا توجد مباراة</span>';
+    $("handCount").textContent = "0 قطع";
+    return;
+  }
+
+  const hand = (LAST.my_hand || []).slice().sort((a, b) => b.localeCompare(a));
+  const forced = LAST.meta?.forced_play_tile;
+
+  $("handCount").textContent = `${hand.length} قطع`;
+
+  if (!hand.length) {
+    container.innerHTML = '<span class="mut">يدك فارغة!</span>';
+    return;
+  }
+
+  hand.forEach((t, idx) => {
+    const el = document.createElement("div");
+    let cls = "tileBtn mine";
+    if (SEL_TILE === t && SEL_PLAYER === "me") cls += " sel";
+    if (t === forced) cls += " forced";
+    el.className = cls;
+    el.textContent = t;
+    el.title = `اضغط ${idx + 1}`;
+    el.onclick = () => selectTile(t, "me");
+    container.appendChild(el);
+  });
+}
+
+// ============================================
+// RENDER: BOARD
+// ============================================
+
+function renderBoard() {
+  const world = $("world");
+  world.innerHTML = "";
+
+  if (!LAST) return;
+
+  const b = LAST.board || {};
+  const arms = b.arms || { right: [], left: [], up: [], down: [] };
+  const ends = b.ends || {};
+
+  const tileForGhost = PREVIEW?.tile || SEL_TILE;
+  const endForPreview = PREVIEW?.end || null;
+
+  // Empty board
+  if (b.is_empty || !b.center_tile) {
+    world.style.width = "100%";
+    world.style.height = "100%";
+
+    const hint = document.createElement("div");
+    hint.className = "chip";
+    hint.style.cssText = "position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);opacity:0.7";
+    hint.textContent = "الرقعة فارغة — اختر قطعة";
+    world.appendChild(hint);
+
+    if (tileForGhost) {
+      const v = tileVals(tileForGhost);
+      if (v) {
+        const ghost = buildDominoNode(v[0], v[1], isDouble(tileForGhost), "ghost");
+        ghost.style.left = "50%";
+        ghost.style.top = "50%";
+        ghost.onclick = () => attemptPlay("right");
+        world.appendChild(ghost);
+      }
+    }
+    return;
+  }
+
+  // Calculate dimensions
+  const step = parseInt(getComputedStyle(document.documentElement).getPropertyValue("--step")) || 62;
+  const pad = 100;
+
+  const maxLen = Math.max(
+    (arms.right || []).length,
+    (arms.left || []).length,
+    (arms.up || []).length,
+    (arms.down || []).length,
+    1
+  ) + 2;
+
+  const worldSize = Math.max(400, maxLen * step + pad * 2);
+  world.style.width = `${worldSize}px`;
+  world.style.height = `${worldSize}px`;
+
+  const cx = worldSize / 2;
+  const cy = worldSize / 2;
+
+  // Draw center
+  const ct = b.center_tile;
+  const cv = tileVals(ct);
+
+  if (cv) {
+    const centerAttach = {
+      right: cv[0],
+      left: cv[1],
+      up: isDouble(ct) ? cv[0] : null,
+      down: isDouble(ct) ? cv[0] : null
+    };
+
+    const centerNode = isDouble(ct)
+      ? buildDominoNode(cv[0], cv[1], true, "")
+      : buildDominoNode(centerAttach.left, centerAttach.right, false, "");
+    
+    centerNode.style.left = `${cx}px`;
+    centerNode.style.top = `${cy}px`;
+    world.appendChild(centerNode);
+
+    // Draw arms
+    const renderArm = (arm) => {
+      const arr = arms[arm] || [];
+      if (!arr.length) return;
+
+      let inVal = centerAttach[arm];
+      if (inVal === null || inVal === undefined) {
+        if (ends[arm]) inVal = Number(ends[arm][0]);
+        else if (arr.length) {
+          const t0 = tileVals(arr[0]);
+          inVal = t0 ? t0[0] : 0;
+        } else inVal = 0;
+      }
+
+      arr.forEach((tileStr, i) => {
+        const tv = tileVals(tileStr);
+        if (!tv) return;
+
+        const p = armPosSerpentine(arm, i + 1, step, cx, cy);
+        const vert = tileOrientationForDir(p.dir) === "vert";
+
+        let node;
+        if (tileHas(tileStr, inVal)) {
+          const outVal = otherValue(tileStr, inVal);
+          const halves = orientedHalvesForDir(p.dir, inVal, outVal);
+          node = buildDominoNode(halves[0], halves[1], vert, "");
+          inVal = outVal;
+        } else {
+          node = buildDominoNode(tv[0], tv[1], vert, "");
+        }
+
+        node.style.left = `${p.x}px`;
+        node.style.top = `${p.y}px`;
+        node.dataset.tile = tileStr;
+        world.appendChild(node);
+      });
+    };
+
+    renderArm("right");
+    renderArm("left");
+    renderArm("up");
+    renderArm("down");
+
+    // Draw ghosts
+    if (tileForGhost) {
+      const legal = computeLegalEnds(LAST, tileForGhost);
+      const endsToShow = endForPreview ? [endForPreview] : [...legal];
+
+      endsToShow.forEach(en => {
+        if (!legal.has(en) || !ends[en]) return;
+
+        const openV = Number(ends[en][0]);
+        if (!tileHas(tileForGhost, openV)) return;
+
+        const outV = otherValue(tileForGhost, openV);
+        const armLen = (arms[en] || []).length;
+        const p = armPosSerpentine(en, armLen + 1, step, cx, cy);
+        const vert = tileOrientationForDir(p.dir) === "vert";
+
+        const halves = orientedHalvesForDir(p.dir, openV, outV);
+        const ghost = buildDominoNode(halves[0], halves[1], vert, "ghost");
+        ghost.style.left = `${p.x}px`;
+        ghost.style.top = `${p.y}px`;
+        ghost.onclick = () => attemptPlay(en);
+        world.appendChild(ghost);
+      });
+    }
+  }
+
+  // Update info
+  $("centerTile").textContent = b.center_tile || "-";
+  $("endsSum").textContent = b.ends_sum ?? 0;
+  $("scoreNow").textContent = b.current_score ?? 0;
+
+  // Auto-center
+  if (!USER_PANNED) {
+    const viewport = $("viewport");
+    viewport.scrollLeft = Math.max(0, cx - viewport.clientWidth / 2);
+    viewport.scrollTop = Math.max(0, cy - viewport.clientHeight / 2);
+  }
+}
+
+// ============================================
+// RENDER: ATLAS
+// ============================================
+
+function renderAtlas() {
+  const container = $("atlas");
+  container.innerHTML = "";
+
+  const mine = EDIT_MODE && EDIT_HAND ? EDIT_HAND : new Set(LAST?.my_hand || []);
+  const played = new Set(LAST?.board?.played_tiles || []);
+  const vis = visibleSet(LAST);
+
+  const likelyTiles = computeLikelyTiles(LAST, LAST_BELIEF).slice(0, 8);
+  const likelySet = new Set(likelyTiles.map(x => x.tile));
+
+  ALL_TILES.forEach(t => {
+    const el = document.createElement("div");
+    let cls = "tileBtn";
+
+    if (mine.has(t)) cls += " mine";
+    else if (played.has(t)) cls += " played";
+    else {
+      cls += " hidden";
+      if (likelySet.has(t)) cls += " likely";
+    }
+
+    if (SEL_TILE === t) cls += " sel";
+    el.className = cls;
+    el.textContent = t;
+
+    // tooltip لاحتمال الخصم
+    const li = likelyTiles.find(x => x.tile === t);
+    if (li) el.title = `محتمل عند الخصم ≈ ${Math.round(li.prob * 100)}%`;
+
+    el.onclick = () => {
+      if (played.has(t)) return;
+
+      if (EDIT_MODE && EDIT_HAND) {
+        if (EDIT_HAND.has(t)) EDIT_HAND.delete(t);
+        else EDIT_HAND.add(t);
+        $("btnEditSave").textContent = `حفظ (${EDIT_HAND.size})`;
+        renderAtlas();
+        return;
+      }
+
+      // يدي
+      if (mine.has(t)) return selectTile(t, "me");
+
+      // للخصم: فقط القطع غير المرئية
+      if (!vis.has(t)) return selectTile(t, "opponent");
+
+      toast("هذه القطعة مرئية بالفعل (يدك/الرقعة) — لا يمكن تسجيلها للخصم", "bad");
+    };
+
+    container.appendChild(el);
+  });
+}
+
+// ============================================
+// RENDER: OPPONENT RACK
+// ============================================
+
+function renderOppRack() {
+  const container = $("oppRack");
+  container.innerHTML = "";
+
+  if (!LAST) return;
+
+  const n = Number(LAST.meta?.opponent_tile_count ?? 0);
+  const show = Math.min(10, Math.max(0, n));
+
+  const likely = computeLikelyTiles(LAST, LAST_BELIEF);
+
+  for (let i = 0; i < show; i++) {
+    const el = document.createElement("div");
+
+    if (likely[i]) {
+      el.className = "tileBtn likely";
+      el.textContent = likely[i].tile;
+      el.title = `≈ ${Math.round(likely[i].prob * 100)}%`;
+    } else {
+      el.className = "tileBtn hidden";
+      el.textContent = "?";
+    }
+
+    container.appendChild(el);
+  }
+
+  if (n > show) {
+    const more = document.createElement("span");
+    more.className = "chip";
+    more.textContent = `+${n - show}`;
+    container.appendChild(more);
+  }
+
+  if (!likely.length && n > 0) {
+    const hint = document.createElement("div");
+    hint.className = "mut";
+    hint.style.marginTop = "6px";
+    hint.textContent = "💡 اضغط تحليل (A)";
+    container.appendChild(hint);
+  }
+}
+
+// ============================================
+// RENDER: CUT PROB
+// ============================================
+
+function renderCutProb() {
+  const box = $("cutProbBox");
+  if (!box) return;
+
+  box.innerHTML = "";
+
+  const arr = LAST_BELIEF?.cut_prob || [];
+  if (!arr.length) {
+    box.innerHTML = '<span class="mut">اضغط تحليل</span>';
+    return;
+  }
+
+  arr.forEach((p, i) => {
+    const chip = document.createElement("span");
+    chip.className = "chip";
+    const pct = Math.round(Number(p) * 100);
+    chip.textContent = `${i}: ${pct}%`;
+    chip.title = `خصم مقطوع من ${i}`;
+    if (pct > 60) chip.style.color = "var(--ok)";
+    else if (pct > 30) chip.style.color = "var(--warn)";
+    box.appendChild(chip);
+  });
+}
+
+// ============================================
+// RENDER: EVENTS
+// ============================================
+
+function renderEvents() {
+  const container = $("eventsList");
+  container.innerHTML = "";
+
+  if (!LAST || !LAST.events || !LAST.events.length) {
+    container.innerHTML = '<div class="mut">لا توجد أحداث</div>';
+    return;
+  }
+
+  LAST.events.slice(-30).forEach(ev => {
+    const item = document.createElement("div");
+    item.className = "eventItem";
+
+    const t = ev.type || "";
+    let main = "", detail = "";
+
+    if (t === "play") {
+      main = `${ev.player === "me" ? "أنا" : "خصم"}: ${ev.tile} → ${ev.end}`;
+      detail = `+${ev.score_gained || 0}`;
+    } else if (t === "draw") {
+      main = `${ev.player === "me" ? "أنا" : "خصم"}: سحب x${ev.draw_count || 1}`;
+      detail = ev.tile || "";
+    } else if (t === "pass") {
+      main = `${ev.player === "me" ? "أنا" : "خصم"}: تمرير`;
+    } else if (t === "round_end") {
+      main = `نهاية: ${ev.end_reason || ""}`;
+      detail = `أنا +${ev.end_award_me || 0} | خصم +${ev.end_award_opp || 0}`;
+    } else {
+      main = t;
+    }
+
+    item.innerHTML = `<div class="ev-main">${main}</div>${detail ? `<div class="ev-detail">${detail}</div>` : ""}`;
+    container.appendChild(item);
+  });
+
+  container.scrollTop = container.scrollHeight;
+}
+
+// ============================================
+// RENDER: SUGGESTIONS
+// ============================================
+
+function renderSuggestions() {
+  const container = $("sugList");
+  container.innerHTML = "";
+
+  if (!LAST_SUGGESTIONS || !LAST_SUGGESTIONS.length) {
+    container.innerHTML = '<div class="mut">اضغط "تحليل"</div>';
+    return;
+  }
+
+  LAST_SUGGESTIONS.slice(0, 6).forEach((s, i) => {
+    const item = document.createElement("div");
+    item.className = "sugItem";
+
+    const pts = s.immediate_points ?? 0;
+    const visits = s.visits !== undefined ? s.visits : "";
+    const depth = s.analysis_depth || "";
+
+    item.innerHTML = `
+      <div>
+        <div class="sug-main">${i + 1}. ${s.tile} → ${s.end}</div>
+        <div class="sug-detail">+${pts} ${visits ? `| ${visits}` : ""} ${depth ? `| ${depth}` : ""}</div>
+      </div>
+      <button class="btn small ok" data-tile="${s.tile}" data-end="${s.end}">▶</button>
+    `;
+
+    item.onmouseenter = () => { PREVIEW = { tile: s.tile, end: s.end }; renderBoard(); };
+    item.onmouseleave = () => { PREVIEW = null; renderBoard(); };
+
+    item.querySelector("button").onclick = () => {
+      selectTile(s.tile, "me");
+      SEL_END = s.end;
+      attemptPlay(s.end);
+    };
+
+    container.appendChild(item);
+  });
+}
+
+// ============================================
+// RENDER: CONTROLS STATE
+// ============================================
+
+function updateControls() {
+  const hasSession = !!LAST;
+  const meta = LAST?.meta || {};
+  const turn = meta.current_turn;
+  const roundOver = !!meta.round_over;
+
+  $("btnAnalyze").disabled = !hasSession || roundOver || turn !== "me";
+  $("btnPlayBest").disabled = !hasSession || roundOver || turn !== "me";
+  $("btnUndo").disabled = !hasSession || roundOver;
+  $("btnRedo").disabled = !hasSession || roundOver;
+  $("btnDrawMe").disabled = !hasSession || roundOver || turn !== "me";
+  $("btnPassMe").disabled = !hasSession || roundOver || turn !== "me" || !meta.must_pass_me;
+
+  const oppAvailable = hasSession && !roundOver && (turn === "opponent" || CORR_MODE);
+  $("btnOppPlay").disabled = !oppAvailable;
+  $("btnOppDraw1").disabled = !oppAvailable;
+  $("btnOppDraw2").disabled = !oppAvailable;
+  $("btnOppDraw3").disabled = !oppAvailable;
+  $("btnOppDraw5").disabled = !oppAvailable;
+  $("btnOppPass").disabled = !oppAvailable;
+  $("btnOppOpen").disabled = !hasSession || roundOver || !LAST?.board?.is_empty;
+}
+
+// ============================================
+// RENDER ALL
+// ============================================
+
+function renderAll() {
+  renderTurnBar();
+  renderMyHand();
+  renderBoard();
+  renderAtlas();
+  renderOppRack();
+  renderEvents();
+  renderSuggestions();
+  renderCutProb();
+  updateEndsUI();
+  updateControls();
+  checkPipsModal();
+  updateExportLinks();
+
+  // Update score fix fields
+  if (LAST?.meta) {
+    $("fixMyScore").value = LAST.meta.my_score ?? 0;
+    $("fixOppScore").value = LAST.meta.opponent_score ?? 0;
+  }
+
+  // Show best move if available
+  if (LAST_SUGGESTIONS?.length) showBestMove();
+}
+
+// ============================================
+// EVENT HANDLERS SETUP
+// ============================================
+
+function setupEventHandlers() {
+  // TABS
+  $("btnAddTab").onclick = () => {
+    const name = prompt("اسم المباراة:", `game_${TABS.size + 1}`);
+    if (name?.trim()) createTab(name.trim(), name.trim());
+  };
+
+  // QUICK SAVE/LOAD
+  $("btnQuickSave").onclick = quickSave;
+  $("quickLoadSelect").onchange = (e) => {
+    if (e.target.value) { quickLoad(e.target.value); e.target.value = ""; }
+  };
+  $("btnRefresh").onclick = refresh;
+
+  // ZOOM
+  $("zoom").oninput = applyZoom;
+  $("btnFitBoard").onclick = fitBoard;
+
+  // ENDS BUTTONS
+  ["right", "left", "up", "down"].forEach(end => {
+    $(`end${end[0].toUpperCase()}`).onclick = () => {
+      SEL_END = end;
+      updateEndsUI();
+      if (SEL_TILE && SEL_PLAYER) attemptPlay(end);
+    };
+  });
+
+  // CLEAR SELECTION
+  $("btnClearSel").onclick = () => { clearSelection(); renderMyHand(); renderBoard(); };
+
+  // QUICK ACTIONS
+  $("btnAnalyze").onclick = analyze;
+  $("btnPlayBest").onclick = playBest;
+  $("btnUndo").onclick = undo;
+  $("btnRedo").onclick = redo;
+  $("btnDrawMe").onclick = drawMe;
+  $("btnPassMe").onclick = passMe;
+
+  // BEST MOVE
+  $("btnApplyBest").onclick = applyBestMove;
+
+  // OPPONENT DRAWER
+  $("oppDrawerToggle").onclick = toggleOppDrawer;
+  $("btnOppPlay").onclick = openOppPlayModal;
+  $("btnOppDraw1").onclick = () => oppDraw(1);
+  $("btnOppDraw2").onclick = () => oppDraw(2);
+  $("btnOppDraw3").onclick = () => oppDraw(3);
+  $("btnOppDraw5").onclick = () => oppDraw(5);
+  $("btnOppPass").onclick = oppPass;
+  $("btnOppOpen").onclick = oppOpen;
+
+  // PANELS
+  document.querySelectorAll(".panelToggle").forEach(btn => {
+    btn.onclick = () => togglePanel(btn.dataset.panel);
+  });
+
+  // SAVES PANEL
+  $("btnDoSave").onclick = doSave;
+  $("btnDoLoad").onclick = doLoad;
+  $("btnDoDelete").onclick = doDelete;
+
+  // NEW GAME PANEL
+  $("startRand").onclick = randomHand;
+  $("startClear").onclick = clearStartPick;
+  $("btnStartMatch").onclick = startMatch;
+  $("btnStartRound").onclick = startRound;
+  $("btnMidgame").onclick = openMidgameModal;
+
+  // ADVANCED PANEL
+  $("btnImport").onclick = importJson;
+  $("btnFixScore").onclick = fixScore;
+  $("btnCorrMode").onclick = toggleCorrMode;
+  $("btnEditMode").onclick = toggleEditMode;
+  $("btnEditSave").onclick = saveEditHand;
+
+  // DRAW MODAL
+  $("drawClose").onclick = () => $("drawModal").classList.remove("show");
+  $("drawConfirm").onclick = confirmDrawMe;
+
+  // OPP PLAY MODAL
+  $("oppPlayClose").onclick = () => $("oppPlayModal").classList.remove("show");
+  $("oppPlayConfirm").onclick = confirmOppPlay;
+  ["right", "left", "up", "down"].forEach(end => {
+    $(`oppEnd${end[0].toUpperCase()}`).onclick = () => {
+      OPP_PLAY_END = end;
+      updateOppPlayEnds();
+    };
+  });
+
+  // MIDGAME MODAL
+  $("midClose").onclick = () => $("midModal").classList.remove("show");
+  $("midApply").onclick = applyMidgame;
+  ["midMyHand", "midCenter", "midRight", "midLeft", "midUp", "midDown", "midOppCnt"].forEach(id => {
+    $(id)?.addEventListener("input", computeMidInvariant);
+  });
+
+  // PIPS MODAL
+  $("pipsClose").onclick = () => $("pipsModal").classList.remove("show");
+  $("pipsConfirm").onclick = confirmPips;
+
+  // VIEWPORT PAN
+  $("viewport").addEventListener("scroll", () => { USER_PANNED = true; });
+}
+
+// ============================================
+// KEYBOARD SHORTCUTS
+// ============================================
+
+function setupKeyboardShortcuts() {
+  document.addEventListener("keydown", (ev) => {
+    const tag = ev.target.tagName.toLowerCase();
+    if (tag === "input" || tag === "textarea" || tag === "select") return;
+
+    const k = ev.key;
+    const ctrl = ev.ctrlKey || ev.metaKey;
+
+    // Ctrl+S = Quick Save
+    if (ctrl && k.toLowerCase() === "s") {
+      ev.preventDefault();
+      quickSave();
+      return;
+    }
+
+    // Ctrl+T = New Tab
+    if (ctrl && k.toLowerCase() === "t") {
+      ev.preventDefault();
+      const name = prompt("اسم المباراة:", `game_${TABS.size + 1}`);
+      if (name?.trim()) createTab(name.trim(), name.trim());
+      return;
+    }
+
+    // Ctrl+Tab = Switch Tabs
+    if (ctrl && k === "Tab") {
+      ev.preventDefault();
+      const tabIds = [...TABS.keys()];
+      const idx = tabIds.indexOf(ACTIVE_TAB);
+      const nextIdx = ev.shiftKey
+        ? (idx - 1 + tabIds.length) % tabIds.length
+        : (idx + 1) % tabIds.length;
+      switchToTab(tabIds[nextIdx]);
+      return;
+    }
+
+    // Escape
+    if (k === "Escape") {
+      ev.preventDefault();
+      if ($("drawModal").classList.contains("show")) {
+        $("drawModal").classList.remove("show");
+      } else if ($("oppPlayModal").classList.contains("show")) {
+        $("oppPlayModal").classList.remove("show");
+      } else if ($("midModal").classList.contains("show")) {
+        $("midModal").classList.remove("show");
+      } else if ($("pipsModal").classList.contains("show")) {
+        $("pipsModal").classList.remove("show");
+      } else if (OPEN_PANEL) {
+        closePanel();
+      } else {
+        clearSelection();
+        renderMyHand();
+        renderBoard();
+      }
+      return;
+    }
+
+    // Skip if modal open
+    if ($("drawModal").classList.contains("show") ||
+        $("oppPlayModal").classList.contains("show") ||
+        $("midModal").classList.contains("show") ||
+        $("pipsModal").classList.contains("show")) {
+      return;
+    }
+
+    // 1-7 = Select tile
+    if (/^[1-7]$/.test(k)) {
+      ev.preventDefault();
+      if (!LAST) return;
+      const hand = (LAST.my_hand || []).slice().sort((a, b) => b.localeCompare(a));
+      const idx = Number(k) - 1;
+      if (idx < hand.length) selectTile(hand[idx], "me");
+      return;
+    }
+
+    // R/L/U/D = End
+    const endMap = { r: "right", l: "left", u: "up", d: "down" };
+    if (endMap[k.toLowerCase()]) {
+      ev.preventDefault();
+      const end = endMap[k.toLowerCase()];
+      const btn = $(`end${end[0].toUpperCase()}`);
+      if (!btn.disabled) {
+        SEL_END = end;
+        updateEndsUI();
+        if (SEL_TILE && SEL_PLAYER) attemptPlay(end);
+      }
+      return;
+    }
+
+    // Enter
+    if (k === "Enter") {
+      ev.preventDefault();
+      if (!LAST || !SEL_TILE) return;
+      const legal = [...computeLegalEnds(LAST, SEL_TILE)];
+      if (SEL_END && legal.includes(SEL_END)) attemptPlay(SEL_END);
+      else if (legal.length === 1) attemptPlay(legal[0]);
+      else toast("اختر طرف", "bad");
+      return;
+    }
+
+    // A = Analyze
+    if (k.toLowerCase() === "a") {
+      ev.preventDefault();
+      if (!$("btnAnalyze").disabled) analyze();
+      return;
+    }
+
+    // P = Play Best
+    if (k.toLowerCase() === "p") {
+      ev.preventDefault();
+      if (!$("btnPlayBest").disabled) playBest();
+      return;
+    }
+
+    // Z = Undo
+    if (k.toLowerCase() === "z" && !ctrl) {
+      ev.preventDefault();
+      if (!$("btnUndo").disabled) undo();
+      return;
+    }
+
+    // Y = Redo
+    if (k.toLowerCase() === "y") {
+      ev.preventDefault();
+      if (!$("btnRedo").disabled) redo();
+      return;
+    }
+
+    // O = Opponent drawer
+    if (k.toLowerCase() === "o") {
+      ev.preventDefault();
+      if (!OPP_DRAWER_OPEN) toggleOppDrawer();
+      return;
+    }
+  });
+}
+
+// ============================================
+// INITIALIZATION
+// ============================================
+
+function initialize() {
+  // Load tabs from storage
+  const loaded = loadTabsFromStorage();
+  if (!loaded) {
+    createTab("default", "Game 1");
+  } else {
+    renderTabs();
+  }
+
+  // Load saves list
+  refreshQuickLoadList();
+
+  // Setup
+  setupEventHandlers();
+  setupKeyboardShortcuts();
+
+  // Apply zoom
+  applyZoom();
+
+  // Load state
+  refresh();
+}
+
+// ============================================
+// START
+// ============================================
+
+document.addEventListener("DOMContentLoaded", initialize);
+
+</script>
+</body>
+</html>
